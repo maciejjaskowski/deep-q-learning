@@ -1,4 +1,5 @@
 import numpy as np
+from random import random, choice
 
 
 class SARSALambdaGradientDescent:
@@ -22,6 +23,7 @@ class SARSALambdaGradientDescent:
         self.theta = np.zeros([len(self.actions), len(initial_theta)])
 
         self.e = np.zeros([len(self.actions), len(initial_theta)])
+        self.next_action = None
 
     def phi(self, state):
         return self.state_adapter(state)
@@ -33,7 +35,7 @@ class SARSALambdaGradientDescent:
         return sum(self.theta[self.action_ind[action]][state])
 
     def q_positive(self, state, action):
-        if ((not self.be_positive) or (tuple(self.phi(state)), action) in self.visited):
+        if (not self.be_positive) or (tuple(self.phi(state)), action) in self.visited:
             return self.q(state, action)
         else:
             return self.initial_q
@@ -44,7 +46,7 @@ class SARSALambdaGradientDescent:
             yield self.next_action
 
     def _action(self, state):
-        if (random() < self.epsilon):
+        if random() < self.epsilon:
             return choice(self.actions)
         else:
             return self.pi(state)
@@ -72,7 +74,7 @@ class SARSALambdaGradientDescent:
             r0 = self.game_over_regret
 
         delta = r0 + (1 - int(exp.game_over)) * (self.gamma * self._q(s1, a1) - self._q(s0, exp.a0))
-        if (random() < self.log_freq):
+        if random() < self.log_freq:
             print ("game_over ", int(exp.game_over), "delta ", delta)
             print ("r", r0, "g", self.gamma, "q1", self._q(s1, a1), "q0", self._q(s0, exp.a0))
             print ("a0", "a1", exp.a0, a1)

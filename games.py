@@ -1,3 +1,38 @@
+from bisect import bisect
+import itertools
+import numpy as np
+import pandas as pd
+from random import random
+
+
+class Tilings:  # n_tilings = 5, n = 9
+
+    def __init__(self, x, y, n, n_tilings):
+        self.dx = (x[1] - x[0])
+        self.dy = (y[1] - y[0])
+        self.range_x = np.array(range(n - 1)) / (n - 1) * self.dx + x[0]
+        self.range_y = np.array(range(n - 1)) / (n - 1) * self.dy + y[0]
+        self.n = n
+        self.n_tilings = n_tilings
+
+    def tiling(self):
+        distortion_x = [x + random() * self.dx / (self.n - 1) for x in self.range_x]
+        distortion_y = [y + random() * self.dy / (self.n - 1) for y in self.range_y]
+        return distortion_x, distortion_y
+
+    def tilings(self):
+        return [self.tiling() for i in range(self.n_tilings)]
+
+    def one_at(self, i):
+        result = np.zeros(self.n * self.n)
+        result[i] = 1
+        return result
+
+    def calc(self):
+        ts = self.tilings()
+        return (lambda p: tuple([(bisect(tiling[0], p[0]), bisect(tiling[1], p[1])) for tiling in ts]), ts)
+
+
 class MountainCarGame:
     def __init__(self):
         self.position = -0.5  # random() * ( 0.5 - (-1.2)) + (-1.2)
@@ -12,12 +47,12 @@ class MountainCarGame:
             self.throttle = ch
 
         self.velocity = self.velocity + 0.001 * self.throttle - 0.0025 * math.cos(3 * self.position)
-        if (self.velocity < -0.07):
+        if self.velocity < -0.07:
             self.velocity = -0.07
-        if (self.velocity > 0.07):
+        if self.velocity > 0.07:
             self.velocity = 0.07
 
-        self.position = self.position + self.velocity
+        self.position += self.velocity
         if self.position > 0.5:
             self.finished = True
         if self.position < -1.2:
@@ -31,7 +66,7 @@ class MountainCarGame:
         return [-1, 0, 1]
 
     def get_state(self):
-        return (self.position, self.velocity)
+        return self.position, self.velocity
 
 
 def mountain_car_game_tilings_state_adapter(tile_in_row, n_tilings):
@@ -48,12 +83,10 @@ class MountainCarGameVisualizer:
         self.i = -1
 
         import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
         self.fig = plt.figure()
         self.velocity_position = self.fig.add_subplot(1, 1, 1)
         # self.expected_reward = self.fig.add_subplot(2, 2, 2, projection = '3d')
         # self.direction = self.fig.add_subplot(2, 2, 3)
-
 
         self.hl, = self.velocity_position.plot([], [], color='k', linestyle='-')
         self.mi, = self.velocity_position.plot([], [], color='red', linestyle='-')
@@ -95,8 +128,6 @@ class MountainCarGameVisualizer:
 
             pos = np.arange(-1.2, 0.5, 0.05)
             vel = np.arange(-0.07, 0.07, 0.005)
-            Pos, Vel = np.meshgrid(pos, vel)
-            # expected_reward = np.reshape([ self.algo.pi_value((_pos, _vel)) for _vel in vel for _pos in pos  ], np.shape(Pos))
 
             direction = pd.DataFrame(
                 [(_pos, _vel, self.algo.best_action(self.state_adapter((_pos, _vel)))) for _vel in vel for _pos in pos])

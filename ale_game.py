@@ -1,7 +1,4 @@
-import sys
-from random import randrange
 from ale_python_interface import ALEInterface
-from itertools import groupby
 import numpy as np
 import pygame
 
@@ -42,7 +39,6 @@ mergeArr = {0: 0,
             246: 0}
 
 mergeArrValuesSet = set(mergeArr.values())
-# mergeArrValuesSet.remove(0)
 mergeArrValues = sorted(list(mergeArrValuesSet))
 
 
@@ -70,15 +66,12 @@ def vectorized(scr, desired_width, desired_height):
 
 
 class SpaceInvadersGameVectorizedVisualizer:
+
     def __init__(self):
-
-        w_orig = 160
-        h_orig = 210
-
         self.desired_width = 14
         self.desired_height = 20
-        self.screen = pygame.display.set_mode((self.desired_height * 16, self.desired_width * 16)) \
- \
+        self.screen = pygame.display.set_mode((self.desired_height * 16, self.desired_width * 16))
+
     def show_vectorized(self, vec):
         rect = pygame.Surface((2, 14))
         border = pygame.Surface((16, 16))
@@ -90,7 +83,7 @@ class SpaceInvadersGameVectorizedVisualizer:
                 # self.screen.blit(border, (x*16, y*16))
 
                 for i_color in range(len(mergeArrValues)):
-                    if (vec[y][x][i_color]):
+                    if vec[y][x][i_color]:
                         rect.fill(ARR[COLORS[i_color]])
                     else:
                         rect.fill((0, 0, 0))
@@ -118,7 +111,7 @@ class SpaceInvadersGame:
     def input(self, action):
         # print ("action: ", action)
         self.cum_reward += self.ale.act(action)
-        if (self.ale.game_over()):
+        if self.ale.game_over():
             print ("finished!")
             self.finished = True
             self.ale.reset_game()
@@ -128,62 +121,3 @@ class SpaceInvadersGame:
 
     def get_state(self):
         return self.state
-
-
-
-
-        # def show(sqr):
-        #  square=pygame.Surface(1, 1)
-        #  for y in range(0, 210, reduceby):
-        #    for x in range(0, 160, reduceby):
-        #        square.fill(arr[sqr[y][x]])
-        #        draw_me=pygame.Rect((x*aspect+1), (y*aspect+1), reduceby * aspect, reduceby * aspect)
-        #        screen.blit(square,draw_me)
-        #  screen.blit(square,(0,0))
-        #  pygame.display.flip()
-
-
-        # def play_randomly(n):
-        #  screens = []
-        #  for episode in xrange(n):
-        #    total_reward = 0
-
-
-        #    while not ale.game_over():
-        #      a = legal_actions[randrange(len(legal_actions))]
-        #      ale.act(a)
-        #      screens.append(ale.getScreen())
-        #    ale.reset_game()
-        #  return screens
-
-        # def define_background(screens):
-        #  import scipy.stats
-        #  return scipy.stats.mode(screens).mode
-
-        # def pickle_background(background, file_name):
-        #  import pickle
-        #  with open(file_name, 'wb') as pfile:
-        #    pickle.dump(background, pfile, protocol = pickle.HIGHEST_PROTOCOL)
-
-        # def unpickle_backround(file_name):
-        #  import pickle
-        #  with open(file_name, 'r') as pfile:
-        #    return pickle.load(pfile)
-
-        # Play 10 episodes
-        # def play():
-        # for episode in xrange(10):
-        #  total_reward = 0
-
-
-        #  while not ale.game_over():
-        #    import time
-        # time.sleep(0.05)
-        # show(sqr = np.reshape(ale.getScreen(), (210, 160)))
-        #    show_vectorized(vectorized(ale.getScreen()))
-        #    a = legal_actions[randrange(len(legal_actions))]
-        # Apply an action and get the resulting reward
-        #    reward = ale.act(a);
-        #    total_reward += reward
-        #  print 'Episode', episode, 'ended with score:', total_reward
-        #  ale.reset_game()

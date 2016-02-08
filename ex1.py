@@ -1,11 +1,7 @@
-import q_learning as q
-import numpy as np
-import ale_game as ag
 
 
 def random_on_space_invaders():
     import q_learning as q
-    import numpy as np
     import ale_game as ag
     reload(q)
     reload(ag)
@@ -113,9 +109,13 @@ def sarsa_gd_on_space_invaders():
 
 
 def random_on_mountain_car_game():
-    game = q.MountainCarGame()
+    import games as g
+    import q_learning as q
+    reload(q)
+    reload(g)
+    game = g.MountainCarGame()
     q_algo = q.RandomAlgo(game.get_actions())
-    visualizer = q.MountainCarGameVisualizer()
+    visualizer = g.MountainCarGameVisualizer()
 
     teacher = q.Teacher(game, q_algo, visualizer)
 
@@ -138,7 +138,7 @@ def sarsa_lambda_gradient_descent():
     tile_in_row = 9
     n_tilings = 5
 
-    state_adapter = q.mountain_car_game_tilings_state_adapter(n_tilings, tile_in_row)
+    state_adapter = g.mountain_car_game_tilings_state_adapter(n_tilings, tile_in_row)
 
     state_adapter2 = lambda s: np.array(state_adapter(s))
 
