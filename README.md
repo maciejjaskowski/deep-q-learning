@@ -20,6 +20,7 @@ output is the same control commands as a human would have with a controller
 ## External References
 
 [The DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)
+
 [Human-level control through deep reinforcement
 learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf)
 
