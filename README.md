@@ -13,12 +13,15 @@ output is the same control commands as a human would have with a controller
 * Theano
 * Lasagne
 * pygame
-* [Arcade Learning Environment (ALE)](arcadelearningenvironment.org)
+* [Arcade Learning Environment (ALE) 0.5.1](arcadelearningenvironment.org)
+* Atari 2600 ROM of space_invaders.bin
 
 
 ## External References
 
 [The DQN paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)
+[Human-level control through deep reinforcement
+learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf)
 
 [Arcade Learning Environment](arcadelearningenvironment.org)
 
