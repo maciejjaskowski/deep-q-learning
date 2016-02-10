@@ -36,7 +36,7 @@ def dqn_on_space_invaders():
         game.cum_reward = 0
         return game
 
-    dqn_algo = dqn.DQNAlgo(game.get_actions())
+    dqn_algo = dqn.DQNAlgo(game.n_actions())
     teacher = q.Teacher(new_game, dqn_algo, ag.SpaceInvadersGameCombined2Visualizer(),
                         ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)

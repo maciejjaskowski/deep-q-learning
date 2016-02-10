@@ -56,13 +56,15 @@ class Teacher:
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
         self.phi = phi
+        self.old_state = None
 
     def teach(self, episodes):
-        return [self.single_play(15000) for i in range(episodes)]
+        return [self.single_episode(15000) for i in range(episodes)]
 
-    def single_play(self, n_steps=float("inf")):
+    def single_episode(self, n_steps=float("inf")):
         game = self.new_game()
-        self.algo.init_state(self.phi(game.get_state()))
+        self.old_state = self.phi(game.get_state())
+        self.algo.init_state(self.old_state)
 
         i_steps = 0
 
@@ -83,7 +85,6 @@ class Teacher:
 
     def single_step(self, game):
 
-        old_state = self.phi(game.get_state())
         old_cum_reward = game.cum_reward
 
         action = self.algo.action()
@@ -93,8 +94,9 @@ class Teacher:
             game.input(action)
             new_state = self.phi(game.get_state())
 
-        exp = Experience(old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
+        exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
         self.algo.feedback(exp)
 
         self.game_visualizer.show(new_state)
+        self.old_state = new_state
         return exp

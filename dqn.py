@@ -71,7 +71,6 @@ def load_dataset():
 
 
 def build_cnn(n_actions, input_var=None):
-
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)
 
@@ -79,7 +78,6 @@ def build_cnn(n_actions, input_var=None):
         network, num_filters=16, filter_size=(8, 8), stride=4,
         nonlinearity=lasagne.nonlinearities.rectify,
         W=lasagne.init.GlorotUniform())
-
 
     network = lasagne.layers.Conv2DLayer(
         network, num_filters=32, filter_size=(4, 4), stride=2,
@@ -143,7 +141,7 @@ def main(num_epochs=500):
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
 
-    prediction = lasagne.layers.get_output(network) # Q(s) \in R^4
+    prediction = lasagne.layers.get_output(network)  # Q(s) \in R^4
 
     # a = argmax(prediction) -> Emulator
     # [0 -> nothing, 1 -> left, 2 -> right, 3 -> shoot]
@@ -163,7 +161,7 @@ def main(num_epochs=500):
     updates = lasagne.updates.sgd(loss, params, learning_rate=0.01)
 
     # As a bonus, also create an expression for the classification accuracy:
-    #test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
+    # test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
     #                  dtype=theano.config.floatX)
 
     # Compile a function performing a training step on a mini-batch (by giving
@@ -225,21 +223,35 @@ def main(num_epochs=500):
 
 
 class DQNAlgo:
-    def __init__(self, legal_actions):
-        self.legal_actions = legal_actions
-        input = T.tensor4('inputs')
-        self.network = build_cnn(n_actions=len(legal_actions), input_var = input)
+    def __init__(self, n_actions):
+        input_var = T.tensor4('inputs')
+        self.n_actions = n_actions
+        self.network = build_cnn(n_actions=self.n_actions, input_var=input_var)
         self.state = None
-
-        self.forward = theano.function([input], lasagne.layers.get_output(self.network, deterministic=True))
+        self.forward = theano.function([input_var], lasagne.layers.get_output(self.network, deterministic=True))
+        self.epsilon = 0.05
+        self.replay_memory = []
 
     def init_state(self, state):
-        self.state = np.reshape(np.dstack(state), (1, 4, 80, 80))
+        self.state = self._prep_state(state)
+
+    @staticmethod
+    def _prep_state(state):
+        return np.reshape(np.stack(state, axis=0), (1, 4, 80, 80))
 
     def action(self):
+        import random
+        if random.random() < self.epsilon:
+            return random.randint(0, self.n_actions - 1)
+        else:
+            return self.best_action()
+
+    def best_action(self):
         q = self.forward(self.state)
-        print(q)
-        return self.legal_actions[np.argmax(q)]
+        return np.argmax(q)
 
     def feedback(self, exp):
-        pass
+        #exp -> s0 a0 r0 s1 game_over
+
+        self.replay_memory.append((self._prep_state(exp.s0), exp.a0, exp.r0, self._prep_state(exp.s1), exp.game_over))
+

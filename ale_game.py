@@ -2,6 +2,7 @@ from ale_python_interface import ALEInterface
 import numpy as np
 import pygame
 from skimage import measure
+from copy import deepcopy
 import scipy
 from scipy import signal
 
@@ -179,10 +180,10 @@ class Phi(object):
             self.prev_frames.append(frame)
             self.prev_frames = self.prev_frames[1:]
             self.prev_cropped = cropped
-            return self.prev_frames
+            return tuple(self.prev_frames) # deepcopy would be slower
         else:
             self.prev_cropped = cropped
-            return self.prev_frames
+            return tuple(self.prev_frames)
 
 
 class SpaceInvadersGameCombined2Visualizer:
@@ -213,13 +214,14 @@ class SpaceInvadersGame(object):
         self.finished = False
         self.cum_reward = 0
         self.state = ale.getScreen()
+        self.action_set = self.ale.getMinimalActionSet()
 
-    def get_actions(self):
-        return self.ale.getMinimalActionSet()
+    def n_actions(self):
+        return len(self.action_set)
 
     def input(self, action):
         # print ("action: ", action)
-        self.cum_reward += self.ale.act(action)
+        self.cum_reward += self.ale.act(self.action_set[action])
         if self.ale.game_over():
             print ("finished!")
             self.finished = True
