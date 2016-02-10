@@ -1,14 +1,43 @@
-
-
 def random_on_space_invaders():
     import q_learning as q
     import ale_game as ag
     reload(q)
     reload(ag)
+
     ale = ag.init()
     game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        return game
+
     # game.show_vectorized(game.vectorized(ale.getScreen()))
-    teacher = q.Teacher(game, q.RandomAlgo(game.get_actions()), ag.SpaceInvadersGameVectorizedVisualizer())
+    teacher = q.Teacher(new_game, q.RandomAlgo(game.get_actions()), ag.SpaceInvadersGameCombined2Visualizer(),
+                        ag.Phi(skip_every=6), repeat_action=6)
+    teacher.teach(1)
+
+
+def random_on_space_invaders():
+    import q_learning as q
+    import ale_game as ag
+    import dqn
+    reload(q)
+    reload(ag)
+    reload(dqn)
+
+    ale = ag.init()
+    game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        return game
+
+    teacher = q.Teacher(new_game, dqn.DQNAlgo(game.get_actions()), ag.SpaceInvadersGameCombined2Visualizer(),
+                        ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)
 
 
