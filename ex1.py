@@ -19,7 +19,7 @@ def random_on_space_invaders():
     teacher.teach(1)
 
 
-def random_on_space_invaders():
+def dqn_on_space_invaders():
     import q_learning as q
     import ale_game as ag
     import dqn
@@ -36,9 +36,11 @@ def random_on_space_invaders():
         game.cum_reward = 0
         return game
 
-    teacher = q.Teacher(new_game, dqn.DQNAlgo(game.get_actions()), ag.SpaceInvadersGameCombined2Visualizer(),
+    dqn_algo = dqn.DQNAlgo(game.get_actions())
+    teacher = q.Teacher(new_game, dqn_algo, ag.SpaceInvadersGameCombined2Visualizer(),
                         ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)
+
 
 
 def sarsa_gd_on_space_invaders():
@@ -186,3 +188,5 @@ def sarsa_lambda_gradient_descent():
 
     teacher = q.Teacher(game, q_algo1, q.GameNoVisualizer())
     teacher.teach(30)
+
+dqn_on_space_invaders()

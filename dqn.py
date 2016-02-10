@@ -72,7 +72,7 @@ def load_dataset():
 
 def build_cnn(n_actions, input_var=None):
 
-    network = lasagne.layers.InputLayer(shape=(None, 4, 84, 84),
+    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -227,11 +227,19 @@ def main(num_epochs=500):
 class DQNAlgo:
     def __init__(self, legal_actions):
         self.legal_actions = legal_actions
+        input = T.tensor4('inputs')
+        self.network = build_cnn(n_actions=len(legal_actions), input_var = input)
+        self.state = None
+
+        self.forward = theano.function([input], lasagne.layers.get_output(self.network, deterministic=True))
+
+    def init_state(self, state):
+        self.state = np.reshape(np.dstack(state), (1, 4, 80, 80))
 
     def action(self):
-        import random
-        while True:
-            yield self.legal_actions[random.randrange(len(self.legal_actions))]
+        q = self.forward(self.state)
+        print(q)
+        return self.legal_actions[np.argmax(q)]
 
-    def feedback(self, x):
+    def feedback(self, exp):
         pass

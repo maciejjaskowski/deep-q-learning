@@ -39,9 +39,11 @@ class RandomAlgo:
     def __init__(self, legal_actions):
         self.legal_actions = legal_actions
 
+    def init_state(self):
+        pass
+
     def action(self):
-        while True:
-            yield self.legal_actions[randrange(len(self.legal_actions))]
+        return self.legal_actions[randrange(len(self.legal_actions))]
 
     def feedback(self, x):
         pass
@@ -52,7 +54,6 @@ class Teacher:
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer
-        self.algo_input = self.algo.action()
         self.repeat_action = repeat_action
         self.phi = phi
 
@@ -61,6 +62,7 @@ class Teacher:
 
     def single_play(self, n_steps=float("inf")):
         game = self.new_game()
+        self.algo.init_state(self.phi(game.get_state()))
 
         i_steps = 0
 
@@ -84,7 +86,7 @@ class Teacher:
         old_state = self.phi(game.get_state())
         old_cum_reward = game.cum_reward
 
-        action = next(self.algo_input)
+        action = self.algo.action()
 
         new_state = None
         for i in range(self.repeat_action):
