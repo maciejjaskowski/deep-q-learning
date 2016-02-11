@@ -1,7 +1,7 @@
 from __future__ import division
 
 from collections import namedtuple
-from copy import deepcopy
+import random
 
 
 Point = namedtuple('Point', 'x y')
@@ -34,61 +34,85 @@ class EveryNVisualizer:
             self.visualizer = GameNoVisualizer()
 
 
-
 class RandomAlgo:
-    def __init__(self, legal_actions):
-        self.legal_actions = legal_actions
+    def __init__(self, n_actions):
+        self.n_actions = n_actions
+
+    def init_state(self, state):
+        pass
 
     def action(self):
-        while True:
-            yield self.legal_actions[randrange(len(self.legal_actions))]
+        return random.randint(0, self.n_actions - 1)
 
     def feedback(self, x):
         pass
 
 
+class ConstAlgo:
+    def __init__(self, const_actions):
+        self.const_actions = const_actions
+        self.i = 0
+
+    def init_state(self, state):
+        pass
+
+    def action(self):
+        self.i += 1
+        return self.const_actions[self.i % len(self.const_actions)]
+
+    def feedback(self, x):
+        pass
+
+
+
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, repeat_action=1):
+    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1):
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer
-        self.algo_input = self.algo.action()
         self.repeat_action = repeat_action
+        self.phi = phi
+        self.old_state = None
 
     def teach(self, episodes):
-        return [self.single_play(15000) for i in range(episodes)]
+        return [self.single_episode(15000) for i in range(episodes)]
 
-    def single_play(self, n_steps=float("inf")):
-        Game = self.new_game()
+    def single_episode(self, n_steps=float("inf")):
+        game = self.new_game()
+        self.old_state = self.phi(game.get_state())
+        self.algo.init_state(self.old_state)
 
         i_steps = 0
 
-        while not Game.finished and i_steps < n_steps:
+        while not game.finished and i_steps < n_steps:
             i_steps += 1
-            exp = self.single_step(Game)
+            exp = self.single_step(game)
 
-        if Game.finished:
+        if game.finished:
             print "Finished after ", i_steps, " steps"
         else:
             print "Failure."
 
-        print Game.cum_reward
+        print game.cum_reward
 
         self.game_visualizer.next_game()
 
-        return (i_steps, Game.cum_reward)
+        return i_steps, game.cum_reward
 
-    def single_step(self, Game):
+    def single_step(self, game):
 
-        old_state = Game.get_state()
-        old_cum_reward = Game.cum_reward
+        old_cum_reward = game.cum_reward
 
-        action = next(self.algo_input)
+        action = self.algo.action()
+
+        new_state = None
         for i in range(self.repeat_action):
-            Game.input(action)
+            game.input(action)
+            new_state = self.phi(game.get_state())
 
-        exp = Experience(old_state, action, Game.cum_reward - old_cum_reward, Game.get_state(), Game.finished)
+        exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
         self.algo.feedback(exp)
 
-        self.game_visualizer.show(Game)
+        self.game_visualizer.show(new_state)
+        self.old_state = new_state
         return exp

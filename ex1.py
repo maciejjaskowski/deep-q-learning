@@ -1,14 +1,67 @@
-
-
 def random_on_space_invaders():
     import q_learning as q
     import ale_game as ag
     reload(q)
     reload(ag)
+
     ale = ag.init()
     game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        return game
+
     # game.show_vectorized(game.vectorized(ale.getScreen()))
-    teacher = q.Teacher(game, q.RandomAlgo(game.get_actions()), ag.SpaceInvadersGameVectorizedVisualizer())
+    teacher = q.Teacher(new_game, q.RandomAlgo(game.get_actions()), ag.SpaceInvadersGameCombined2Visualizer(),
+                        ag.Phi(skip_every=6), repeat_action=6)
+    teacher.teach(1)
+
+
+def dqn_on_space_invaders():
+    import q_learning as q
+    import ale_game as ag
+    import dqn
+    reload(q)
+    reload(ag)
+    reload(dqn)
+
+    ale = ag.init()
+    game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        return game
+
+    dqn_algo = dqn.DQNAlgo(game.n_actions())
+    teacher = q.Teacher(new_game, dqn_algo, ag.SpaceInvadersGameCombined2Visualizer(),
+                        ag.Phi(skip_every=6), repeat_action=6)
+    teacher.teach(1)
+
+
+def const_on_space_invaders():
+    import q_learning as q
+    import ale_game as ag
+    import dqn
+    reload(q)
+    reload(ag)
+    reload(dqn)
+
+    ale = ag.init()
+    game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        return game
+
+    const_algo = q.ConstAlgo([2, 2, 2, 2, 2, 0, 0, 0, 0])
+    teacher = q.Teacher(new_game, const_algo, ag.SpaceInvadersGameCombined2Visualizer(),
+                        ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)
 
 
@@ -26,20 +79,19 @@ def sarsa_gd_on_space_invaders():
     ale = ag.init()
     run = '1'
 
-    n_colors = 5
-
-    def state_adapter(scr):
-        vect = np.reshape(ag.vectorized(scr, 14, 20), 14 * 20 * n_colors)
-        return np.where(vect)[0]
+    def state_adapter(frames):
+        result = np.where(np.reshape(np.concatenate(frames), 80 * 80 * 4) > 0)
+        if len(result) == 0:
+            return [0]
+        else:
+            return result
 
     game = ag.SpaceInvadersGame(ale)
-    q_algo1 = ss.SARSALambdaGradientDescent(game.get_actions(), game.get_state(),
-                                            initial_q=5, initial_theta=[1] * 14 * 20 * n_colors, be_positive=False,
-                                            state_adapter=state_adapter)
-    q_algo1.epsilon = 0.05
-    q_algo1.lmbda = 0.99  # 0.9
+    q_algo1 = ss.SARSALambdaGradientDescent(game.n_actions(), theta_len=80 * 80 * 4, state_adapter=state_adapter)
+    q_algo1.epsilon = 0.9
+    q_algo1.lmbda = 0.99
     q_algo1.gamma = 0.999
-    q_algo1.alpha = 0.5
+    q_algo1.alpha = 0.1
 
     def new_game():
         game.ale.reset_game()
@@ -47,36 +99,32 @@ def sarsa_gd_on_space_invaders():
         game.cum_reward = 0
         return game
 
-    teacher = q.Teacher(new_game, q_algo1, ag.SpaceInvadersGameVectorizedVisualizer(), repeat_action=3)
 
-    #  teacher.single_step(Game)
-    q_algo1.epsilon = 0
-    q_algo1.log_freq = 1
-    teacher.teach(1)
-
-    initial_training = 1000
-    training_decay_from = 95
-    training_decay_ex = 50
 
     result_test = []
     result_1 = []
     result_2 = []
 
-    teacher = q.Teacher(new_game, q_algo1, q.GameNoVisualizer(), repeat_action=3)
-    q_algo1.log_freq = 0.05
+    teacher = q.Teacher(new_game, q_algo1, q.GameNoVisualizer(), phi=ag.Phi(skip_every=6), repeat_action=6)
+
     q_algo1.epsilon = 1
-    result_1 = teacher.teach(initial_training)
+    q_algo1.log_freq = 1
+    result_test.append(teacher.teach(10))
 
-    q_algo1.epsilon = 0
-    q_algo1.log_freq = 0.05
-    result_test.append(teacher.teach(1))
+    vis_teacher = q.Teacher(new_game, q_algo1, ag.SpaceInvadersGameCombined2Visualizer(), phi=ag.Phi(skip_every=6),
+                        repeat_action=6)
 
-    for i in range(training_decay_from):
+    #  teacher.single_step(Game)
+    q_algo1.epsilon = 0.1
+    q_algo1.log_freq = 1
+    #vis_teacher.teach(5)
+
+    for i in xrange(90):
+        q_algo1.log_freq = 0.03
         q_algo1.epsilon = 1 - i / 100
-        teacher = q.Teacher(new_game, q_algo1, q.GameNoVisualizer(), repeat_action=3)
-        result_2.append(teacher.teach(training_decay_ex))
-        q_algo1.epsilon = 0
-        result_test.append(teacher.teach(1))
+        result_2.append(teacher.teach(50))
+        q_algo1.epsilon = 0.1
+        result_test.append(teacher.teach(10))
 
     import cPickle as pickle
     with open('gradient_descent.theta' + run, 'wb') as handle:
@@ -122,38 +170,5 @@ def random_on_mountain_car_game():
     teacher.teach(1)
 
 
-def sarsa_lambda_gradient_descent():
-    import matplotlib.pyplot as plt
-    plt.ion()
-    import q_learning as q
-    import numpy as np
-    import sarsa as ss
-    import games as g
-    reload(g)
-    reload(q)
-    reload(ss)
-
-    game = g.MountainCarGame
-
-    tile_in_row = 9
-    n_tilings = 5
-
-    state_adapter = g.mountain_car_game_tilings_state_adapter(n_tilings, tile_in_row)
-
-    state_adapter2 = lambda s: np.array(state_adapter(s))
-
-    initial_theta = np.array([1] * tile_in_row * tile_in_row * n_tilings)
-
-    q_algo1 = ss.SARSALambdaGradientDescent(game().get_actions(), game().get_state(),
-                                            initial_q=0, initial_theta=initial_theta, state_adapter=state_adapter2)
-
-    q_algo1.epsilon = 0.02
-    q_algo1.lmbda = 0.5
-    q_algo1.gamma = 0.9
-    q_algo1.alpha = 0.1
-
-    teacher = q.Teacher(game, q_algo1, g.MountainCarGameVisualizer(q_algo1))
-    teacher.teach(1)
-
-    teacher = q.Teacher(game, q_algo1, q.GameNoVisualizer())
-    teacher.teach(30)
+dqn_on_space_invaders()
+#sarsa_gd_on_space_invaders()
