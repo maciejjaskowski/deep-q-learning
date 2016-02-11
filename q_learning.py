@@ -1,8 +1,7 @@
 from __future__ import division
 
 from collections import namedtuple
-from random import randrange
-from copy import deepcopy
+import random
 
 
 Point = namedtuple('Point', 'x y')
@@ -36,17 +35,34 @@ class EveryNVisualizer:
 
 
 class RandomAlgo:
-    def __init__(self, legal_actions):
-        self.legal_actions = legal_actions
+    def __init__(self, n_actions):
+        self.n_actions = n_actions
 
-    def init_state(self):
+    def init_state(self, state):
         pass
 
     def action(self):
-        return self.legal_actions[randrange(len(self.legal_actions))]
+        return random.randint(0, self.n_actions - 1)
 
     def feedback(self, x):
         pass
+
+
+class ConstAlgo:
+    def __init__(self, const_actions):
+        self.const_actions = const_actions
+        self.i = 0
+
+    def init_state(self, state):
+        pass
+
+    def action(self):
+        self.i += 1
+        return self.const_actions[self.i % len(self.const_actions)]
+
+    def feedback(self, x):
+        pass
+
 
 
 class Teacher:

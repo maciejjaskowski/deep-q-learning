@@ -67,18 +67,6 @@ def init():
     return ale
 
 
-def vectorize_single_group(vec):
-    return map(lambda e: e in vec, mergeArrValues)
-
-
-def vectorized(scr, desired_width, desired_height):
-    grouped = \
-        np.reshape(
-            np.swapaxes(np.reshape(scr, (desired_width, 210 / desired_width, desired_height, 160 / desired_height)), 1,
-                        2), (desired_width, desired_height, 160 * 210 / desired_width / desired_height))
-    return np.apply_along_axis(vectorize_single_group, axis=2, arr=grouped)
-
-
 class SpaceInvadersGameVectorizedVisualizer:
     def __init__(self):
         self.desired_width = 14
@@ -209,6 +197,14 @@ class SpaceInvadersGameCombined2Visualizer:
 
 
 class SpaceInvadersGame(object):
+
+# 0 nothing
+# 1 ^
+# 2 ->
+# 3 <-
+# 4 -> and ^
+# 5 <- and ^
+
     def __init__(self, ale):
         self.ale = ale
         self.finished = False
@@ -220,7 +216,6 @@ class SpaceInvadersGame(object):
         return len(self.action_set)
 
     def input(self, action):
-        # print ("action: ", action)
         self.cum_reward += self.ale.act(self.action_set[action])
         if self.ale.game_over():
             print ("finished!")
