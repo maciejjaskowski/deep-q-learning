@@ -104,7 +104,7 @@ class Teacher:
         old_cum_reward = game.cum_reward
 
         action = self.algo.action()
-        print("action: ", action)
+        #print("action: ", action)
 
         new_state = None
         skip = 0

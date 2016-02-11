@@ -225,15 +225,43 @@ def main(num_epochs=500):
 class DQNAlgo:
     def __init__(self, n_actions):
         input_var = T.tensor4('inputs')
+        input_var_stale = T.tensor4('inputs')
         self.n_actions = n_actions
+
         self.network = build_cnn(n_actions=self.n_actions, input_var=input_var)
-        self.state = None
         self.forward = theano.function([input_var], lasagne.layers.get_output(self.network, deterministic=True))
+
+        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=input_var_stale)
+        self.forward_stale = theano.function([input_var_stale],
+                                             lasagne.layers.get_output(self.network_stale, deterministic=True))
+        self._update_network_stale()
+
+        self.state = None
         self.epsilon = 0.05
         self.replay_memory = []
 
+        self.minibatch_size = 32
+        self.replay_memory_size = 1000000
+        self.gamma = 0.99
+
+        self.target_network_update_frequency = 10000
+        # update frequency ?
+
+        self.alpha = 0.00025
+        # gradient momentum ? 0.95
+        # squared gradient momentum ? 0.95
+        # min squared gradient ? 0.01
+        self.initial_epsilon = 1
+        self.final_epsilon = 0.1
+        self.final_exploration_frame = 1000000
+        self.replay_start_size = 50000
+        self.i_frames = 0
+
     def init_state(self, state):
         self.state = self._prep_state(state)
+
+    def _update_network_stale(self):
+        lasagne.layers.set_all_param_values(self.network_stale, lasagne.layers.get_all_param_values(self.network))
 
     @staticmethod
     def _prep_state(state):
@@ -250,8 +278,32 @@ class DQNAlgo:
         q = self.forward(self.state)
         return np.argmax(q)
 
+    def q_stale(self, states):
+        q = self.forward_stale(states)
+        assert np.shape(q) == (len(states), self.n_actions)
+        return np.reshape(np.max(q, axis=1), (len(states), 1))
+
     def feedback(self, exp):
-        #exp -> s0 a0 r0 s1 game_over
+        # exp -> s0 a0 r0 s1 game_over
+        self.i_frames += 1
 
         self.replay_memory.append((self._prep_state(exp.s0), exp.a0, exp.r0, self._prep_state(exp.s1), exp.game_over))
+        if len(self.replay_memory) > self.replay_memory_size + 10000:
+            self.replay_memory = self.replay_memory[10000:]
+        import random
 
+        if len(self.replay_memory) > self.replay_start_size:
+            sample = random.sample(self.replay_memory, self.minibatch_size)
+            stacked_phis = np.stack([phi1 for _, _, _, phi1, _ in sample], axis=0)
+            assert np.shape(stacked_phis) == (self.minibatch_size, 4, 80, 80)
+
+            qs = self.q_stale(stacked_phis)
+            future_reward_indicator = np.array([[1 - int(game_over)] for _, _, _, _, game_over in sample])
+            assert np.shape(future_reward_indicator) == (len(sample), 1)
+            assert np.shape(qs) == (len(sample), 1)
+
+            r = sample[:, 2]
+            y = r + self.gamma * future_reward_indicator * qs
+
+            if self.i_frames % self.target_network_update_frequency == 0:
+                self._update_network_stale()

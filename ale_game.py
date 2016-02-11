@@ -58,7 +58,7 @@ mergeArrValues = sorted(list(mergeArrValuesSet))
 
 def init():
     pygame.init()
-    rom_path = '/Users/maciej/Development/atari-roms'
+    rom_path = '.'
     ale = ALEInterface()
     ale.setInt('random_seed', 123)
     ale.setBool('frame_skip', 1)
