@@ -34,11 +34,12 @@ def dqn_on_space_invaders():
         game.ale.reset_game()
         game.finished = False
         game.cum_reward = 0
+        game.lives = 4
         return game
 
     dqn_algo = dqn.DQNAlgo(game.n_actions())
     teacher = q.Teacher(new_game, dqn_algo, ag.SpaceInvadersGameCombined2Visualizer(),
-                        ag.Phi(skip_every=6), repeat_action=6)
+                        ag.Phi(skip_every=6), repeat_action=6, sleep_seconds=0)
     teacher.teach(1)
 
 
@@ -171,4 +172,3 @@ def random_on_mountain_car_game():
 
 
 dqn_on_space_invaders()
-#sarsa_gd_on_space_invaders()

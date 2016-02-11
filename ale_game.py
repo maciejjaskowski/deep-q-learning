@@ -211,6 +211,7 @@ class SpaceInvadersGame(object):
         self.cum_reward = 0
         self.state = ale.getScreen()
         self.action_set = self.ale.getMinimalActionSet()
+        self.lives = 4
 
     def n_actions(self):
         return len(self.action_set)
@@ -223,7 +224,12 @@ class SpaceInvadersGame(object):
             self.ale.reset_game()
 
         self.state = self.ale.getScreen()
-        return self
+        if self.lives != self.ale.lives():
+            self.lives = self.ale.lives()
+            print ("Let's skip 40 frames!")
+            return 40
+        else:
+            return 0
 
     def get_state(self):
         return self.state

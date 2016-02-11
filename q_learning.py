@@ -64,15 +64,15 @@ class ConstAlgo:
         pass
 
 
-
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1):
+    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds = 0):
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
         self.phi = phi
         self.old_state = None
+        self.sleep_seconds = sleep_seconds
 
     def teach(self, episodes):
         return [self.single_episode(15000) for i in range(episodes)]
@@ -104,15 +104,27 @@ class Teacher:
         old_cum_reward = game.cum_reward
 
         action = self.algo.action()
+        print("action: ", action)
 
         new_state = None
+        skip = 0
         for i in range(self.repeat_action):
-            game.input(action)
+            skip = max(skip, game.input(action))
             new_state = self.phi(game.get_state())
 
         exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
         self.algo.feedback(exp)
 
         self.game_visualizer.show(new_state)
+
+        for i in range(skip):
+            game.input(action)
+            new_state = self.phi(game.get_state())
+            self.game_visualizer.show(new_state)
+
         self.old_state = new_state
+        if self.sleep_seconds != 0:
+            import time
+            time.sleep(self.sleep_seconds)
+
         return exp
