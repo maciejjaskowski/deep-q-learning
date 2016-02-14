@@ -44,4 +44,12 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [Reinforcement Learning: An introduction](https://webdocs.cs.ualberta.ca/~sutton/book/ebook/) - very thorough introduction to Reinforcement Learning.
 
-[A survey of robot learning by demonstration](http://www.cs.cmu.edu/~mmv/papers/09ras-survey.pdf)
+[A survey of robot learning by demonstration](http://www.cs.cmu.edu/~mmv/papers/09ras-survey.pdf) Learning by|from demonstration = Learning by watching = Learning from observation = Programming by demonstration = Behaviour cloning|imitation|mimicry
+
+[DynaQ](https://webdocs.cs.ualberta.ca/~sutton/book/ebook/node96.html)
+
+[Deep Reinforcement Learning](http://www.iclr.cc/lib/exe/fetch.php?media=iclr2015:silver-iclr2015.pdf) Nice summary of recent advances in Deep Q-learning.
+
+[Concurrent Q-learning for Autonomous Mapping and Navigation](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.155.616&rep=rep1&type=pdf) One-trial learning???
+
+[Using Reinforcement Learning to Adapt an Imitation Task](http://lasa.epfl.ch/publications/uploadedFiles/IROS07.pdf) Overcoming new obstacles ???
