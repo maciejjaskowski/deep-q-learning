@@ -42,3 +42,6 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [Deep Autoregressive Neural Networks](https://www.cs.toronto.edu/~amnih/papers/darn.pdf) - predicting future frames of an Atari Game.
 
+[Reinforcement Learning: An introduction](https://webdocs.cs.ualberta.ca/~sutton/book/ebook/) - very thorough introduction to Reinforcement Learning.
+
+[A survey of robot learning by demonstration](http://www.cs.cmu.edu/~mmv/papers/09ras-survey.pdf)
