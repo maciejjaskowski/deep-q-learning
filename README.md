@@ -36,5 +36,9 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [A fast learning algorithm for deep belief nets](http://www.cs.toronto.edu/~hinton/absps/fastnc.pdf) - Training one layer at a time
 
+[Reinforcement Learning and Automated Planning: A Survey](http://lpis.csd.auth.gr/publications/rlplan.pdf)
 
+[Autoregressive Neural Networks](https://opus4.kobv.de/opus4-uni-passau/files/142/Dietz_Sebastian.pdf) - Neural Networks applied to Time Series.
+
+[Deep Autoregressive Neural Networks](https://www.cs.toronto.edu/~amnih/papers/darn.pdf) - predicting future frames of an Atari Game.
 
