@@ -23,9 +23,13 @@ def dqn_on_space_invaders():
     import q_learning as q
     import ale_game as ag
     import dqn
+    import theano
     reload(q)
     reload(ag)
     reload(dqn)
+    theano.config.compute_test_value = 'warn'
+    theano.config.exception_verbosity = 'high'
+    theano.config.optimizer = 'fast_compile'
 
     ale = ag.init()
     game = ag.SpaceInvadersGame(ale)
@@ -38,6 +42,10 @@ def dqn_on_space_invaders():
         return game
 
     dqn_algo = dqn.DQNAlgo(game.n_actions())
+    dqn_algo.target_network_update_frequency = 50
+    dqn_algo.replay_memory_size = 100
+    dqn_algo.replay_start_size = 75
+
     teacher = q.Teacher(new_game, dqn_algo, ag.SpaceInvadersGameCombined2Visualizer(),
                         ag.Phi(skip_every=6), repeat_action=6, sleep_seconds=0)
     teacher.teach(1)
