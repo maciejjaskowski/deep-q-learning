@@ -70,15 +70,15 @@ def init(pygame_on=False):
 
 class Phi(object):
     def __init__(self, skip_every):
-        self.prev_cropped = np.zeros((80, 80))
-        self.prev_frames = [np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80))]
+        self.prev_cropped = np.zeros((80, 80), dtype=np.float32)
+        self.prev_frames = [np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32)]
         self.frame_count = -1
         self.skip_every = skip_every
 
     def __call__(self, state):
         self.frame_count += 1
 
-        cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        cropped = measure.block_reduce((np.reshape(state.astype(np.float32), (210, 160))[35:-15, :]), (2, 2), func=np.max)
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)

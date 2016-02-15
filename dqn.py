@@ -200,9 +200,11 @@ class DQNAlgo:
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
         self.network = build_cnn(n_actions=self.n_actions, input_var=s0_var)
+        print("Compiling forward.")
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
         self.network_stale = build_cnn(n_actions=self.n_actions, input_var=s1_var)
+        print("Compiling forward stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
         self._update_network_stale()
@@ -213,10 +215,10 @@ class DQNAlgo:
         params = lasagne.layers.get_all_params(self.network, trainable=True)
         updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=1.0, rho=0.95,
                                           epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
-
+        print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                         self.loss, updates=updates)
-
+        print("Compiling loss_fn.")
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                         self.loss)
 
