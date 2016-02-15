@@ -17,58 +17,6 @@ import lasagne
 # This is just some way of getting the MNIST dataset from an online location
 # and loading it into numpy arrays. It doesn't involve Lasagne at all.
 
-def load_dataset():
-    # We first define a download function, supporting both Python 2 and 3.
-    if sys.version_info[0] == 2:
-        from urllib import urlretrieve
-    else:
-        from urllib.request import urlretrieve
-
-    def download(filename, source='http://yann.lecun.com/exdb/mnist/'):
-        print("Downloading %s" % filename)
-        urlretrieve(source + filename, filename)
-
-    # We then define functions for loading MNIST images and labels.
-    # For convenience, they also download the requested files if needed.
-    import gzip
-
-    def load_mnist_images(filename):
-        if not os.path.exists(filename):
-            download(filename)
-        # Read the inputs in Yann LeCun's binary format.
-        with gzip.open(filename, 'rb') as f:
-            data = np.frombuffer(f.read(), np.uint8, offset=16)
-        # The inputs are vectors now, we reshape them to monochrome 2D images,
-        # following the shape convention: (examples, channels, rows, columns)
-        data = data.reshape(-1, 1, 28, 28)
-        # The inputs come as bytes, we convert them to float32 in range [0,1].
-        # (Actually to range [0, 255/256], for compatibility to the version
-        # provided at http://deeplearning.net/data/mnist/mnist.pkl.gz.)
-        return data / np.float32(256)
-
-    def load_mnist_labels(filename):
-        if not os.path.exists(filename):
-            download(filename)
-        # Read the labels in Yann LeCun's binary format.
-        with gzip.open(filename, 'rb') as f:
-            data = np.frombuffer(f.read(), np.uint8, offset=8)
-        # The labels are vectors of integers now, that's exactly what we want.
-        return data
-
-    # We can now download and read the training and test set images and labels.
-    X_train = load_mnist_images('train-images-idx3-ubyte.gz')
-    y_train = load_mnist_labels('train-labels-idx1-ubyte.gz')
-    X_test = load_mnist_images('t10k-images-idx3-ubyte.gz')
-    y_test = load_mnist_labels('t10k-labels-idx1-ubyte.gz')
-
-    # We reserve the last 10000 training examples for validation.
-    X_train, X_val = X_train[:-10000], X_train[-10000:]
-    y_train, y_val = y_train[:-10000], y_train[-10000:]
-
-    # We just return all the arrays in order, as expected in main().
-    # (It doesn't matter how we do this as long as we can read them again.)
-    return X_train, y_train, X_val, y_val, X_test, y_test
-
 
 def build_cnn(n_actions, input_var=None):
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
@@ -245,8 +193,8 @@ class DQNAlgo:
 
         self.target_network_update_frequency = 10000
 
-        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.dtensor4("s0"), T.bmatrix("a0"), T.wcol(
-            "r0"), T.dtensor4("s1"), T.bcol(
+        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.tensor4("s0", dtype=theano.config.floatX), T.bmatrix("a0"), T.wcol(
+            "r0"), T.tensor4("s1", dtype=theano.config.floatX), T.bcol(
             "future_reward_indicator")
         self.n_actions = n_actions
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
@@ -304,13 +252,13 @@ class DQNAlgo:
 
         if len(self.replay_memory) > self.replay_start_size:
             sample = zip(*random.sample(self.replay_memory, self.minibatch_size))
-            s0 = np.array(sample[0], dtype=np.float32).reshape(self.minibatch_size, 4, 80, 80)
+            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
 
             a0 = np.array(sample[1], dtype=np.int8).reshape(self.minibatch_size, self.n_actions)
 
             r0 = np.array(sample[2], dtype=np.int16).reshape(self.minibatch_size, 1)
 
-            s1 = np.array(sample[3], dtype=np.float32).reshape(self.minibatch_size, 4, 80, 80)
+            s1 = np.array(sample[3], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
 
             future_reward_indicators = np.array(sample[4], dtype=np.int8).reshape(self.minibatch_size, 1)
 
@@ -331,11 +279,11 @@ def build_loss(network, network_stale, exp_var, gamma):
     a0_var.tag.test_value = np.random.rand(32, 6).astype(dtype=np.int8)
 
     qs = lasagne.layers.get_output(network_stale, deterministic=True)  # 32 x 6
-    qs.tag.test_value = np.random.rand(32, 6).astype(dtype=np.float32)
+    qs.tag.test_value = np.random.rand(32, 6).astype(dtype=theano.config.floatX)
     y = r0_var + gamma * future_reward_indicator_var * T.max(qs, axis=1)  # 32 x 1
 
     out = lasagne.layers.get_output(network, deterministic=True)  # 32 x 6
-    out.tag.test_value = np.random.rand(1, 6).astype(dtype=np.float32)
+    out.tag.test_value = np.random.rand(1, 6).astype(dtype=theano.config.floatX)
     q = T.sum(T.dot(a0_var, T.transpose(out)), axis=1)  # 32 x 1
     loss = (y - q) ** 2
     return loss.mean()  # TODO or sum? -> alpha depends on that.
