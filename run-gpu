@@ -1,0 +1,1 @@
+THEANO_FLAGS=device=gpu python ex1.py
