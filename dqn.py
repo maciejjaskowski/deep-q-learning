@@ -225,6 +225,7 @@ def main(num_epochs=500):
 class DQNAlgo:
     def __init__(self, n_actions):
         self.alpha = 0.00025
+        # update frequency ?
         # gradient momentum ? 0.95
         # squared gradient momentum ? 0.95
         # min squared gradient ? 0.01
@@ -245,8 +246,10 @@ class DQNAlgo:
         self.target_network_update_frequency = 10000
 
         s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.dtensor4("s0"), T.bmatrix("a0"), T.wcol(
-            "r0"), T.dtensor4("s1"), T.bcol("future_reward_indicator")
+            "r0"), T.dtensor4("s1"), T.bcol(
+            "future_reward_indicator")
         self.n_actions = n_actions
+        self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
         self.network = build_cnn(n_actions=self.n_actions, input_var=s0_var)
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
@@ -266,7 +269,8 @@ class DQNAlgo:
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                         self.loss, updates=updates)
 
-        # update frequency ?
+        self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
+                                        self.loss)
 
     def init_state(self, state):
         self.state = self._prep_state(state)
@@ -293,24 +297,24 @@ class DQNAlgo:
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
 
-        self.replay_memory.append((self._prep_state(exp.s0), exp.a0, exp.r0, self._prep_state(exp.s1), exp.game_over))
+        self.replay_memory.append((self._prep_state(exp.s0), self.a_lookup[exp.a0], exp.r0, self._prep_state(exp.s1), 1 - int(exp.game_over)))
         if len(self.replay_memory) > self.replay_memory_size + 10000:
             self.replay_memory = self.replay_memory[10000:]
         import random
 
         if len(self.replay_memory) > self.replay_start_size:
-            sample = random.sample(self.replay_memory, self.minibatch_size)
+            sample = zip(*random.sample(self.replay_memory, self.minibatch_size))
+            s0 = np.array(sample[0], dtype=np.float32).reshape(self.minibatch_size, 4, 80, 80)
 
-            stacked_phis = np.stack([phi1 for _, _, _, phi1, _ in sample], axis=0)  # -> s0_var
-            assert np.shape(stacked_phis) == (self.minibatch_size, 4, 80, 80)
+            a0 = np.array(sample[1], dtype=np.int8).reshape(self.minibatch_size, self.n_actions)
 
-            future_reward_indicator = np.array(
-                [[1 - int(game_over)] for _, _, _, _, game_over in sample])  # -> future_reward_indicator_var
-            assert np.shape(future_reward_indicator) == (len(sample), 1)
+            r0 = np.array(sample[2], dtype=np.int16).reshape(self.minibatch_size, 1)
 
-            r = sample[:, 2]  # -> r0_var
+            s1 = np.array(sample[3], dtype=np.float32).reshape(self.minibatch_size, 4, 80, 80)
 
-            # TODO ?
+            future_reward_indicators = np.array(sample[4], dtype=np.int8).reshape(self.minibatch_size, 1)
+
+            self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
             if self.i_frames % self.target_network_update_frequency == 0:
                 self._update_network_stale()
@@ -322,11 +326,16 @@ def build_loss(network, network_stale, exp_var, gamma):
     # a0_var mini_batch x 1,
     # r0_var mini_batch x 1,
     # s1_mini_batch x 4 x 80 x 80
+    future_reward_indicator_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int8)
+    r0_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int16)
+    a0_var.tag.test_value = np.random.rand(32, 6).astype(dtype=np.int8)
 
-    qs = lasagne.layers.get_output(network_stale, deterministic=True)
-    y = r0_var + gamma * future_reward_indicator_var * qs
+    qs = lasagne.layers.get_output(network_stale, deterministic=True)  # 32 x 6
+    qs.tag.test_value = np.random.rand(32, 6).astype(dtype=np.float32)
+    y = r0_var + gamma * future_reward_indicator_var * T.max(qs, axis=1)  # 32 x 1
 
-    out = lasagne.layers.get_output(network, deterministic=True)
-    q = T.sum(out * a0_var, axis=1)
+    out = lasagne.layers.get_output(network, deterministic=True)  # 32 x 6
+    out.tag.test_value = np.random.rand(1, 6).astype(dtype=np.float32)
+    q = T.sum(T.dot(a0_var, T.transpose(out)), axis=1)  # 32 x 1
     loss = (y - q) ** 2
     return loss.mean()  # TODO or sum? -> alpha depends on that.
