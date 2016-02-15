@@ -1,6 +1,7 @@
 # Alt + Shift + E
 
 from __future__ import print_function
+from __future__ import division
 
 import sys
 import os
@@ -178,14 +179,15 @@ class DQNAlgo:
         # squared gradient momentum ? 0.95
         # min squared gradient ? 0.01
         self.save_every_n_frames = 100000 # ~ once per hour
-        self.initial_epsilon = 1
-        self.final_epsilon = 0.1
+
         self.final_exploration_frame = 1000000
         self.replay_start_size = 50000
         self.i_frames = 0
 
         self.state = None
-        self.epsilon = 0.05
+        self.initial_epsilon = 1
+        self.final_epsilon = 0.1
+        self.epsilon = self.initial_epsilon
         self.gamma = 0.99
         self.replay_memory = []
 
@@ -235,6 +237,13 @@ class DQNAlgo:
 
     def action(self):
         import random
+        if self.i_frames < self.final_exploration_frame:
+            if self.i_frames % 10000 == 50:
+                self.epsilon = (self.final_epsilon - self.initial_epsilon) * (self.i_frames / self.final_exploration_frame) + self.initial_epsilon
+                print("epsilon: ", self.epsilon)
+        else:
+            self.epsilon = self.final_epsilon
+
         if random.random() < self.epsilon:
             return random.randint(0, self.n_actions - 1)
         else:
