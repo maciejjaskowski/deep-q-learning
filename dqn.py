@@ -177,6 +177,7 @@ class DQNAlgo:
         # gradient momentum ? 0.95
         # squared gradient momentum ? 0.95
         # min squared gradient ? 0.01
+        self.save_every_n_frames = 100000 # ~ once per hour
         self.initial_epsilon = 1
         self.final_epsilon = 0.1
         self.final_exploration_frame = 1000000
@@ -268,6 +269,12 @@ class DQNAlgo:
 
             if self.i_frames % self.target_network_update_frequency == 0:
                 self._update_network_stale()
+
+        if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
+            filename = 'weights_' + str(self.i_frames) + '.npz'
+            print("File saved: ", filename)
+            np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
+
 
 
 def build_loss(network, network_stale, exp_var, gamma):
