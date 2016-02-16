@@ -19,7 +19,7 @@ def random_on_space_invaders():
     teacher.teach(1)
 
 
-def dqn_on_space_invaders(visualize=False):
+def dqn_on_space_invaders(visualize=False, theano_verbose=False, initial_weights_file=None):
     import q_learning as q
     import ale_game as ag
     import dqn
@@ -27,9 +27,10 @@ def dqn_on_space_invaders(visualize=False):
     reload(q)
     reload(ag)
     reload(dqn)
-    #theano.config.compute_test_value = 'warn'
-    #theano.config.exception_verbosity = 'high'
-    #theano.config.optimizer = 'fast_compile'
+    if theano_verbose:
+        theano.config.compute_test_value = 'warn'
+        theano.config.exception_verbosity = 'high'
+        theano.config.optimizer = 'fast_compile'
 
     ale = ag.init()
     game = ag.SpaceInvadersGame(ale)
@@ -41,16 +42,55 @@ def dqn_on_space_invaders(visualize=False):
         game.lives = 4
         return game
 
-    dqn_algo = dqn.DQNAlgo(game.n_actions())
+    dqn_algo = dqn.DQNAlgo(game.n_actions(), initial_weights_file=initial_weights_file)
 
-    dqn_algo.target_network_update_frequency = 50
-    dqn_algo.replay_memory_size = 100
-    dqn_algo.replay_start_size = 75
+    #dqn_algo.target_network_update_frequency = 50
+    #dqn_algo.replay_memory_size = 100
+    #dqn_algo.replay_start_size = 75
+    dqn_algo.epsilon = 0.1
+    #dqn_algo.ignore_feedback = True
 
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
-                        ag.Phi(skip_every=6), repeat_action=6, sleep_seconds=0)
-    teacher.teach(1)
+                        ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
+    teacher.teach(1000000)
+
+
+def dqn_on_space_invaders(visualize=False, theano_verbose=False, initial_weights_file=None):
+    import q_learning as q
+    import ale_game as ag
+    import dqn
+    import theano
+    reload(q)
+    reload(ag)
+    reload(dqn)
+    if theano_verbose:
+        theano.config.compute_test_value = 'warn'
+        theano.config.exception_verbosity = 'high'
+        theano.config.optimizer = 'fast_compile'
+
+    ale = ag.init()
+    game = ag.SpaceInvadersGame(ale)
+
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        game.lives = 4
+        return game
+
+    dqn_algo = dqn.DQNAlgo(game.n_actions(), initial_weights_file=initial_weights_file)
+
+    #dqn_algo.target_network_update_frequency = 50
+    #dqn_algo.replay_memory_size = 100
+    #dqn_algo.replay_start_size = 75
+    dqn_algo.epsilon = 0.1
+    #dqn_algo.ignore_feedback = True
+
+    visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
+    teacher = q.Teacher(new_game, dqn_algo, visualizer,
+                        ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
+    teacher.teach(1000000)
 
 
 def const_on_space_invaders():
@@ -181,4 +221,6 @@ def random_on_mountain_car_game():
     teacher.teach(1)
 
 
-dqn_on_space_invaders(visualize=True)
+#dqn_on_space_invaders(visualize=True)
+
+dqn_on_space_invaders(visualize=False)

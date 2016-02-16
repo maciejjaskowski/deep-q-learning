@@ -172,7 +172,8 @@ def main(num_epochs=500):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions):
+    def __init__(self, n_actions, initial_weights_file=None):
+        self.ignore_feedback = False
         self.alpha = 0.00025
         # update frequency ?
         # gradient momentum ? 0.95
@@ -210,6 +211,12 @@ class DQNAlgo:
         print("Compiling forward stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
+
+        if initial_weights_file is not None:
+            with np.load(initial_weights_file) as initial_weights:
+                param_values = [initial_weights['arr_%d' % i] for i in range(len(initial_weights.files))]
+                lasagne.layers.set_all_param_values(self.network, param_values)
+
         self._update_network_stale()
 
         self.loss = build_loss(self.network, self.network_stale,
@@ -256,8 +263,10 @@ class DQNAlgo:
     def feedback(self, exp):
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
+        if self.ignore_feedback:
+            return
 
-        self.replay_memory.append((self._prep_state(exp.s0), self.a_lookup[exp.a0], exp.r0, self._prep_state(exp.s1), 1 - int(exp.game_over)))
+        self.replay_memory.append((self._prep_state(exp.s0), self.a_lookup[exp.a0], exp.r0, self._prep_state(exp.s1), 1-int(exp.game_over)))
         if len(self.replay_memory) > self.replay_memory_size + 10000:
             self.replay_memory = self.replay_memory[10000:]
         import random
