@@ -1,6 +1,5 @@
 from ale_python_interface import ALEInterface
 import numpy as np
-import pygame
 from skimage import measure
 from copy import deepcopy
 import scipy
@@ -56,112 +55,30 @@ mergeArrValuesSet = set(mergeArr.values())
 mergeArrValues = sorted(list(mergeArrValuesSet))
 
 
-def init():
-    pygame.init()
+def init(pygame_on=False):
+    if pygame_on:
+        import pygame
+        pygame.init()
     rom_path = '.'
     ale = ALEInterface()
     ale.setInt('random_seed', 123)
-    ale.setBool('frame_skip', 1)
+    #ale.setBool('frame_skip', 1)
     ale.loadROM(rom_path + '/space_invaders.bin')
     ale.setFloat("repeat_action_probability", 0)
     return ale
 
 
-class SpaceInvadersGameVectorizedVisualizer:
-    def __init__(self):
-        self.desired_width = 14
-        self.desired_height = 20
-        self.screen = pygame.display.set_mode((self.desired_height * 16, self.desired_width * 16))
-
-    def show_vectorized(self, vec):
-        rect = pygame.Surface((2, 14))
-        border = pygame.Surface((16, 16))
-
-        border.fill((255, 255, 255))
-        for y in range(0, self.desired_width):
-            for x in range(0, self.desired_height):
-                # border_rect = pygame.Rect(x, y, 16, 16)
-                # self.screen.blit(border, (x*16, y*16))
-
-                for i_color in range(len(mergeArrValues)):
-                    if vec[y][x][i_color]:
-                        rect.fill(ARR[COLORS[i_color]])
-                    else:
-                        rect.fill((0, 0, 0))
-                    self.screen.blit(rect, (x * 16 + 1 + i_color * 2, y * 16 + 1))
-
-        pygame.display.flip()
-
-    def show(self, game):
-        self.show_vectorized(vectorized(game.get_state(), self.desired_width, self.desired_height))
-
-    def next_game(self):
-        pass
-
-
-class SpaceInvadersGameVisualizer:
-    def __init__(self):
-        self.desired_width = 160
-        self.desired_height = 210
-        self.screen = pygame.display.set_mode((160, 210))
-
-    def show(self, game):
-        l = lambda x: ARR[x]
-        rect = pygame.Surface((160, 210))
-
-        arr_to_blit = np.reshape(zip(*list(np.frompyfunc(l, 1, 3)(game.get_state()))), (210, 160, 3))
-        pygame.surfarray.blit_array(rect, np.transpose(arr_to_blit, [1, 0, 2]))
-        self.screen.blit(rect, (0, 0))
-
-        pygame.display.flip()
-
-    def next_game(self):
-        pass
-
-
-class SpaceInvadersGameCombinedVisualizer:
-    def __init__(self):
-        self.screen = pygame.display.set_mode((80, 320))
-        self.prev_cropped = np.zeros((80, 80))
-        self.prev_frames = [np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80))]
-
-    def show(self, game):
-        l = lambda x: gray_scale_lookup[x]
-        f_l = np.frompyfunc(l, 1, 3)
-        rect = pygame.Surface((80, 320))
-
-        from skimage import measure
-        cropped = measure.block_reduce((np.reshape(game.get_state(), (210, 160))[35:-15, :]), (2, 2), func=np.max)
-        frame = np.maximum(cropped, self.prev_cropped)
-        self.prev_cropped = cropped
-
-        self.prev_frames.append(frame)
-        self.prev_frames = self.prev_frames[1:]
-
-        image = np.reshape(zip(*list(f_l(np.concatenate(self.prev_frames).flatten()))), (320, 80, 3))
-
-        image = np.transpose(image, [1, 0, 2])
-        print(np.shape(image))
-        pygame.surfarray.blit_array(rect, image)
-        self.screen.blit(rect, (0, 0))
-
-        pygame.display.flip()
-
-    def next_game(self):
-        pass
-
-
 class Phi(object):
     def __init__(self, skip_every):
-        self.prev_cropped = np.zeros((80, 80))
-        self.prev_frames = [np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80)), np.zeros((80, 80))]
+        self.prev_cropped = np.zeros((80, 80), dtype=np.float32)
+        self.prev_frames = [np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32), np.zeros((80, 80), dtype=np.float32)]
         self.frame_count = -1
         self.skip_every = skip_every
 
     def __call__(self, state):
         self.frame_count += 1
 
-        cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        cropped = measure.block_reduce((np.reshape(state.astype(np.float32), (210, 160))[35:-15, :]), (2, 2), func=np.max)
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)
@@ -176,9 +93,11 @@ class Phi(object):
 
 class SpaceInvadersGameCombined2Visualizer:
     def __init__(self):
+        import pygame
         self.screen = pygame.display.set_mode((160, 640))
 
     def show(self, prev_frames):
+        import pygame
         l = lambda x: gray_scale_lookup[x]
         f_l = np.frompyfunc(l, 1, 3)
         rect = pygame.Surface((160, 640))

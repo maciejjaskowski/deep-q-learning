@@ -1,6 +1,7 @@
 # Alt + Shift + E
 
 from __future__ import print_function
+from __future__ import division
 
 import sys
 import os
@@ -16,58 +17,6 @@ import lasagne
 # ################## Download and prepare the MNIST dataset ##################
 # This is just some way of getting the MNIST dataset from an online location
 # and loading it into numpy arrays. It doesn't involve Lasagne at all.
-
-def load_dataset():
-    # We first define a download function, supporting both Python 2 and 3.
-    if sys.version_info[0] == 2:
-        from urllib import urlretrieve
-    else:
-        from urllib.request import urlretrieve
-
-    def download(filename, source='http://yann.lecun.com/exdb/mnist/'):
-        print("Downloading %s" % filename)
-        urlretrieve(source + filename, filename)
-
-    # We then define functions for loading MNIST images and labels.
-    # For convenience, they also download the requested files if needed.
-    import gzip
-
-    def load_mnist_images(filename):
-        if not os.path.exists(filename):
-            download(filename)
-        # Read the inputs in Yann LeCun's binary format.
-        with gzip.open(filename, 'rb') as f:
-            data = np.frombuffer(f.read(), np.uint8, offset=16)
-        # The inputs are vectors now, we reshape them to monochrome 2D images,
-        # following the shape convention: (examples, channels, rows, columns)
-        data = data.reshape(-1, 1, 28, 28)
-        # The inputs come as bytes, we convert them to float32 in range [0,1].
-        # (Actually to range [0, 255/256], for compatibility to the version
-        # provided at http://deeplearning.net/data/mnist/mnist.pkl.gz.)
-        return data / np.float32(256)
-
-    def load_mnist_labels(filename):
-        if not os.path.exists(filename):
-            download(filename)
-        # Read the labels in Yann LeCun's binary format.
-        with gzip.open(filename, 'rb') as f:
-            data = np.frombuffer(f.read(), np.uint8, offset=8)
-        # The labels are vectors of integers now, that's exactly what we want.
-        return data
-
-    # We can now download and read the training and test set images and labels.
-    X_train = load_mnist_images('train-images-idx3-ubyte.gz')
-    y_train = load_mnist_labels('train-labels-idx1-ubyte.gz')
-    X_test = load_mnist_images('t10k-images-idx3-ubyte.gz')
-    y_test = load_mnist_labels('t10k-labels-idx1-ubyte.gz')
-
-    # We reserve the last 10000 training examples for validation.
-    X_train, X_val = X_train[:-10000], X_train[-10000:]
-    y_train, y_val = y_train[:-10000], y_train[-10000:]
-
-    # We just return all the arrays in order, as expected in main().
-    # (It doesn't matter how we do this as long as we can read them again.)
-    return X_train, y_train, X_val, y_val, X_test, y_test
 
 
 def build_cnn(n_actions, input_var=None):
@@ -224,50 +173,57 @@ def main(num_epochs=500):
 
 class DQNAlgo:
     def __init__(self, n_actions):
+        self.alpha = 0.00025
+        # update frequency ?
+        # gradient momentum ? 0.95
+        # squared gradient momentum ? 0.95
+        # min squared gradient ? 0.01
+        self.save_every_n_frames = 100000 # ~ once per hour
+
+        self.final_exploration_frame = 1000000
+        self.replay_start_size = 50000
+        self.i_frames = 0
+
         self.state = None
-        self.epsilon = 0.05
+        self.initial_epsilon = 1
+        self.final_epsilon = 0.1
+        self.epsilon = self.initial_epsilon
         self.gamma = 0.99
         self.replay_memory = []
 
         self.minibatch_size = 32
         self.replay_memory_size = 1000000
 
-
         self.target_network_update_frequency = 10000
 
-        input_var = T.tensor4('inputs')
-        input_var_stale = T.tensor4('inputs')
+        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.tensor4("s0", dtype=theano.config.floatX), T.bmatrix("a0"), T.wcol(
+            "r0"), T.tensor4("s1", dtype=theano.config.floatX), T.bcol(
+            "future_reward_indicator")
         self.n_actions = n_actions
+        self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
-        self.network = build_cnn(n_actions=self.n_actions, input_var=input_var)
-        self.forward = theano.function([input_var], lasagne.layers.get_output(self.network, deterministic=True))
+        self.network = build_cnn(n_actions=self.n_actions, input_var=s0_var)
+        print("Compiling forward.")
+        self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
-        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=input_var_stale)
-        self.forward_stale = theano.function([input_var_stale],
+        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=s1_var)
+        print("Compiling forward stale.")
+        self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
         self._update_network_stale()
-        exp_var = (T.btensor4("s0"), T.bmatrix("a0"), T.wcol("r0"), T.btensor4("s1"), T.bcol("future_reward_indicator"))
 
-        self.loss = build_loss(self.network, self.network_stale, exp_var, self.gamma)
+        self.loss = build_loss(self.network, self.network_stale,
+                               (s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var), self.gamma)
 
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        updates = lasagne.updates.rmsprop(
-            self.loss, params, learning_rate=1.0, rho=0.95,
-            epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
-        self.train_fn = theano.function([input_var, exp_var], self.loss, updates=updates)
-
-
-        # update frequency ?
-
-        self.alpha = 0.00025
-        # gradient momentum ? 0.95
-        # squared gradient momentum ? 0.95
-        # min squared gradient ? 0.01
-        self.initial_epsilon = 1
-        self.final_epsilon = 0.1
-        self.final_exploration_frame = 1000000
-        self.replay_start_size = 50000
-        self.i_frames = 0
+        updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=1.0, rho=0.95,
+                                          epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
+        print("Compiling train_fn.")
+        self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
+                                        self.loss, updates=updates)
+        print("Compiling loss_fn.")
+        self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
+                                        self.loss)
 
     def init_state(self, state):
         self.state = self._prep_state(state)
@@ -281,6 +237,13 @@ class DQNAlgo:
 
     def action(self):
         import random
+        if self.i_frames < self.final_exploration_frame:
+            if self.i_frames % 10000 == 50:
+                self.epsilon = (self.final_epsilon - self.initial_epsilon) * (self.i_frames / self.final_exploration_frame) + self.initial_epsilon
+                print("epsilon: ", self.epsilon)
+        else:
+            self.epsilon = self.final_epsilon
+
         if random.random() < self.epsilon:
             return random.randint(0, self.n_actions - 1)
         else:
@@ -294,28 +257,33 @@ class DQNAlgo:
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
 
-        self.replay_memory.append((self._prep_state(exp.s0), exp.a0, exp.r0, self._prep_state(exp.s1), exp.game_over))
+        self.replay_memory.append((self._prep_state(exp.s0), self.a_lookup[exp.a0], exp.r0, self._prep_state(exp.s1), 1 - int(exp.game_over)))
         if len(self.replay_memory) > self.replay_memory_size + 10000:
             self.replay_memory = self.replay_memory[10000:]
         import random
 
         if len(self.replay_memory) > self.replay_start_size:
-            sample = random.sample(self.replay_memory, self.minibatch_size)
+            sample = zip(*random.sample(self.replay_memory, self.minibatch_size))
+            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
 
-            stacked_phis = np.stack([phi1 for _, _, _, phi1, _ in sample], axis=0)  # -> s0_var
-            assert np.shape(stacked_phis) == (self.minibatch_size, 4, 80, 80)
+            a0 = np.array(sample[1], dtype=np.int8).reshape(self.minibatch_size, self.n_actions)
 
-            future_reward_indicator = np.array(
-                [[1 - int(game_over)] for _, _, _, _, game_over in sample])  # -> future_reward_indicator_var
-            assert np.shape(future_reward_indicator) == (len(sample), 1)
+            r0 = np.array(sample[2], dtype=np.int16).reshape(self.minibatch_size, 1)
 
-            r = sample[:, 2]  # -> r0_var
+            s1 = np.array(sample[3], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
 
-            # TODO ?
-            # TODO: a0 must be a 2d matrix of indicators
+            future_reward_indicators = np.array(sample[4], dtype=np.int8).reshape(self.minibatch_size, 1)
+
+            self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
             if self.i_frames % self.target_network_update_frequency == 0:
                 self._update_network_stale()
+
+        if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
+            filename = 'weights_' + str(self.i_frames) + '.npz'
+            print("File saved: ", filename)
+            np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
+
 
 
 def build_loss(network, network_stale, exp_var, gamma):
@@ -324,11 +292,16 @@ def build_loss(network, network_stale, exp_var, gamma):
     # a0_var mini_batch x 1,
     # r0_var mini_batch x 1,
     # s1_mini_batch x 4 x 80 x 80
+    future_reward_indicator_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int8)
+    r0_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int16)
+    a0_var.tag.test_value = np.random.rand(32, 6).astype(dtype=np.int8)
 
-    qs = lasagne.layers.get_output(network_stale, deterministic=True)
-    y = r0_var + gamma * future_reward_indicator_var * qs
+    qs = lasagne.layers.get_output(network_stale, deterministic=True)  # 32 x 6
+    qs.tag.test_value = np.random.rand(32, 6).astype(dtype=theano.config.floatX)
+    y = r0_var + gamma * future_reward_indicator_var * T.max(qs, axis=1)  # 32 x 1
 
-    out = lasagne.layers.get_output(network, deterministic=True)
-    q = T.sum(out * a0_var, axis=1)
+    out = lasagne.layers.get_output(network, deterministic=True)  # 32 x 6
+    out.tag.test_value = np.random.rand(1, 6).astype(dtype=theano.config.floatX)
+    q = T.sum(T.dot(a0_var, T.transpose(out)), axis=1)  # 32 x 1
     loss = (y - q) ** 2
     return loss.mean()  # TODO or sum? -> alpha depends on that.

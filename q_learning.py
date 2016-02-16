@@ -84,9 +84,12 @@ class Teacher:
 
         i_steps = 0
 
+
         while not game.finished and i_steps < n_steps:
             i_steps += 1
-            exp = self.single_step(game)
+            exp, elapsed_time = self.single_step(game)
+            if i_steps % 10 == 0:
+                print(elapsed_time)
 
         if game.finished:
             print "Finished after ", i_steps, " steps"
@@ -100,7 +103,8 @@ class Teacher:
         return i_steps, game.cum_reward
 
     def single_step(self, game):
-
+        import time
+        time_start = time.time()
         old_cum_reward = game.cum_reward
 
         action = self.algo.action()
@@ -127,4 +131,6 @@ class Teacher:
             import time
             time.sleep(self.sleep_seconds)
 
-        return exp
+        time_end = time.time()
+
+        return exp, time_end - time_start
