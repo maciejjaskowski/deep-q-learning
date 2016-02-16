@@ -85,7 +85,7 @@ class Phi(object):
             self.prev_frames.append(frame)
             self.prev_frames = self.prev_frames[1:]
             self.prev_cropped = cropped
-            return tuple(self.prev_frames) # deepcopy would be slower
+            return tuple(self.prev_frames)  # deepcopy would be slower
         else:
             self.prev_cropped = cropped
             return tuple(self.prev_frames)
