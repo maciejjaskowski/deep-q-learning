@@ -98,8 +98,8 @@ class SpaceInvadersGameCombined2Visualizer:
 
     def show(self, prev_frames):
         import pygame
-        print("frames: ", prev_frames)
-        l = lambda x: gray_scale_lookup[x]
+        #l = lambda x: gray_scale_lookup[x]
+        l = lambda x: ARR[x]
         f_l = np.frompyfunc(l, 1, 3)
         rect = pygame.Surface((160, 640))
 

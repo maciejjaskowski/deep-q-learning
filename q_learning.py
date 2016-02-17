@@ -65,7 +65,7 @@ class ConstAlgo:
 
 
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds = 0):
+    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds=0):
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer

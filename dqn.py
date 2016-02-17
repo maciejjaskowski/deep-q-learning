@@ -13,6 +13,7 @@ import lasagne
 # ################## Download and prepare the MNIST dataset ##################
 # This is just some way of getting the MNIST dataset from an online location
 # and loading it into numpy arrays. It doesn't involve Lasagne at all.
+lasagne.layers.cuda_convnet.Conv2DCCLayer
 
 
 def build_cnn(n_actions, input_var=None):
@@ -20,22 +21,31 @@ def build_cnn(n_actions, input_var=None):
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=16, filter_size=(8, 8), stride=4,
+        network, num_filters=32, filter_size=(8, 8), stride=4,
         nonlinearity=lasagne.nonlinearities.rectify,
-        W=lasagne.init.GlorotUniform())
+        W=lasagne.init.GlorotUniform(),
+        b=lasagne.init.Constant(.1))
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=32, filter_size=(4, 4), stride=2,
-        nonlinearity=lasagne.nonlinearities.rectify)
+        network, num_filters=64, filter_size=(4, 4), stride=2,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=64, filter_size=(3, 3), stride=1,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
 
     network = lasagne.layers.DenseLayer(
         network,
-        num_units=256,
-        nonlinearity=lasagne.nonlinearities.rectify)
+        num_units=512,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
 
     network = lasagne.layers.DenseLayer(
         network,
-        num_units=n_actions)
+        num_units=n_actions,
+        b=lasagne.init.Constant(.1))
 
     return network
 
@@ -129,6 +139,8 @@ class DQNAlgo:
         self.gamma = 0.99
         self.replay_memory = replay_memory
 
+        self.log_frequency = 50
+
         self.minibatch_size = 32
         # self.replay_memory_size = 1000000
 
@@ -210,7 +222,6 @@ class DQNAlgo:
     def feedback(self, exp):
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
-
         if self.ignore_feedback:
             return
 
@@ -232,15 +243,13 @@ class DQNAlgo:
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
+
             self.n_parameter_updates += 1
 
-            if self.i_frames % 5000 < 500:
+            if self.i_frames % 5000 < self.log_frequency:
                 print('loss: ', t[0], t[1])
-                print('a0: ', a0)
-                print('future_reward_indicators: ', future_reward_indicators)
-                print('r0: ', r0)
 
-            if self.i_frames % 5000 < 10:
+            if self.i_frames % 5000 < self.log_frequency:
                 print('y, q: ', t[2], t[3])
                 print('out: ', t[4])
                 print('out_stale: ', t[5])
