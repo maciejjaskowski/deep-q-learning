@@ -34,7 +34,7 @@ def provision(client_token, availability_zone):
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='one-time',  # 'persistent'
                                         LaunchSpecification={
-                                            'ImageId': 'ami-2cbf3e44',
+                                            'ImageId': 'ami-876553ed',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
@@ -101,7 +101,7 @@ def attach_volume(instance):
                 Device='/dev/xvdf')
             time.sleep(1)
         except:
-            import tracebackcd /usr/local/cuda/samples/1_Utilities/deviceQuery
+            import traceback
             traceback.print_exc()
             print(datetime.now().time(), "Not ready yet.")
             import sys

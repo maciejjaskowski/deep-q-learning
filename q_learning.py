@@ -65,7 +65,7 @@ class ConstAlgo:
 
 
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds = 0):
+    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds=0):
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer
@@ -84,11 +84,10 @@ class Teacher:
 
         i_steps = 0
 
-
         while not game.finished and i_steps < n_steps:
             i_steps += 1
             exp, elapsed_time = self.single_step(game)
-            if i_steps % 10 == 0:
+            if i_steps % 1000 < 10:
                 print(elapsed_time)
 
         if game.finished:
@@ -96,7 +95,7 @@ class Teacher:
         else:
             print "Failure."
 
-        print game.cum_reward
+        print "Game reward: " + str(game.cum_reward)
 
         self.game_visualizer.next_game()
 
