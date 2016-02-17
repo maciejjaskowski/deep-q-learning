@@ -121,8 +121,10 @@ class DQNAlgo:
 
         self._update_network_stale()
 
-        self.loss, self.err, __y, __q = build_loss(out=lasagne.layers.get_output(self.network),
-                                                   out_stale=lasagne.layers.get_output(self.network_stale),
+        out = lasagne.layers.get_output(self.network)
+        out_stale = lasagne.layers.get_output(self.network_stale)
+        self.loss, self.err, __y, __q = build_loss(out=out,
+                                                   out_stale=out_stale,
                                                    a0_var=a0_var,
                                                    r0_var=r0_var,
                                                    future_reward_indicator_var=future_reward_indicator_var,
@@ -133,7 +135,7 @@ class DQNAlgo:
                                           epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
         print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
-                                        [self.loss, self.err, T.transpose(__y), T.transpose(__q)], updates=updates)
+                                        [self.loss, self.err, T.transpose(__y), T.transpose(__q), out, out_stale ], updates=updates)
         print("Compiling loss_fn.")
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
@@ -192,8 +194,15 @@ class DQNAlgo:
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
-            if self.i_frames % 5000 < 500:
-                print('loss: ', t)
+            if self.i_frames % 5000 < 50:
+                print('loss: ', t[0], t[1])
+                print('a0: ', a0)
+
+            if self.i_frames % 5000 < 10:
+                print('y, q: ', t[2], t[3])
+                print('out: ', t[4])
+                print('out_stale: ', t[5])
+
 
             if self.i_frames % self.target_network_update_frequency == 0:
                 self._update_network_stale()
