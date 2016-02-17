@@ -51,6 +51,7 @@ def dqn_on_space_invaders(visualize=False, theano_verbose=False, initial_weights
     dqn_algo.epsilon = 0.1
     dqn_algo.initial_epsilon = 0.1
     dqn_algo.final_epsilon = 0.1
+    dqn_algo.log_frequency = 500
 
     dqn_algo.ignore_feedback = ignore_feedback
     # dqn_algo.ignore_feedback = True
