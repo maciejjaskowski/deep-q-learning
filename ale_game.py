@@ -139,14 +139,12 @@ class SpaceInvadersGame(object):
     def input(self, action):
         self.cum_reward += self.ale.act(self.action_set[action])
         if self.ale.game_over():
-            print ("finished!")
             self.finished = True
             self.ale.reset_game()
 
         self.state = self.ale.getScreen()
         if self.lives != self.ale.lives():
             self.lives = self.ale.lives()
-            print ("Let's skip 40 frames!")
             return 40
         else:
             return 0

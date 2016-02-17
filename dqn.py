@@ -10,10 +10,7 @@ import theano.tensor as T
 import lasagne
 
 
-# ################## Download and prepare the MNIST dataset ##################
-# This is just some way of getting the MNIST dataset from an online location
-# and loading it into numpy arrays. It doesn't involve Lasagne at all.
-lasagne.layers.cuda_convnet.Conv2DCCLayer
+#lasagne.layers.cuda_convnet.Conv2DCCLayer
 
 
 def build_cnn(n_actions, input_var=None):
@@ -243,7 +240,6 @@ class DQNAlgo:
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
-
             self.n_parameter_updates += 1
 
             if self.i_frames % 5000 < self.log_frequency:
@@ -256,6 +252,9 @@ class DQNAlgo:
 
             if self.n_parameter_updates % self.target_network_update_frequency == 0:
                 self._update_network_stale()
+
+        if self.i_frames % 10000 == 100:
+            print("Processed frames: ", self.i_frames)
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
             filename = 'weights_' + str(self.i_frames) + '.npz'
@@ -277,5 +276,6 @@ def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamm
     y = r0_var + gamma * future_reward_indicator_var * T.max(out_stale, axis=1, keepdims=True)  # 32 x 1
     q = T.sum(a0_var * out, axis=1, keepdims=True)  # 32 x 1
     err = y - q
+    err = T.max(T.stack(T.neg(T.ones_like(err)), T.min(T.stack(T.ones_like(err), err), axis=0)), axis=0) # cap with -1 and 1 elementwise
     loss = err ** 2
     return loss.mean(), (y - q).mean(), y, q

@@ -58,7 +58,7 @@ def dqn_on_space_invaders(visualize=False, theano_verbose=False, initial_weights
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
                         ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
-    teacher.teach(1000000)
+    teacher.teach(500000)
 
 
 def const_on_space_invaders():
@@ -118,6 +118,8 @@ def sarsa_gd_on_space_invaders():
         game.cum_reward = 0
         return game
 
+
+
     result_test = []
     result_1 = []
     result_2 = []
@@ -129,7 +131,7 @@ def sarsa_gd_on_space_invaders():
     result_test.append(teacher.teach(10))
 
     vis_teacher = q.Teacher(new_game, q_algo1, ag.SpaceInvadersGameCombined2Visualizer(), phi=ag.Phi(skip_every=6),
-                            repeat_action=6)
+                        repeat_action=6)
 
     #  teacher.single_step(Game)
     q_algo1.epsilon = 0.1

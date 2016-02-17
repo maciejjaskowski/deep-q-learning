@@ -35,7 +35,7 @@ class MyTestCase(unittest.TestCase):
 
         self.assertTrue(np.all(y == [[3.5], [3]]))
         self.assertTrue(np.all(q == [[-5], [4]]))
-        self.assertTrue(sqr_mean == 36.625)
+        self.assertTrue(sqr_mean == 1)
         self.assertTrue(mean == 3.75)
 
     def test_validity2(self):
