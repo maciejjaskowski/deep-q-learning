@@ -38,3 +38,32 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(sqr_mean == 36.625)
         self.assertTrue(mean == 3.75)
 
+    def test_validity2(self):
+        theano.config.on_unused_input = 'warn'
+        a0_var = T.dmatrix('a0')
+        r0_var = T.dmatrix('r0')
+        fri_var = T.dmatrix("fri")
+        out = T.dmatrix("out")
+        out_stale = T.dmatrix("out_stale")
+
+        f = theano.function([a0_var, r0_var, fri_var, out, out_stale],
+                            dqn.build_loss(out, out_stale, a0_var, r0_var, fri_var, gamma=0.5))
+
+        sqr_mean, mean, y, q = f(np.array([[1, 0, 0, 0, 0, 0],
+                                           [0, 1, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 1]]),
+                                 np.array([[1],
+                                           [0],
+                                           [5]]),
+                                 np.array([[1],
+                                           [1],
+                                           [0]]),
+                                 np.array([[-5, 1, 2, 3, 4, 7],
+                                           [1, 4, 3, 4, 5, 9],
+                                           [0, 9, 0, 3, 2, 1]]),
+                                 np.array([[-5, 1, 2, 3, 4, 5],
+                                           [1, 2, 3, 4, 5, 6],
+                                           [8, 0, -1, -1, 2, 3]]))
+
+        print(y, q)
+

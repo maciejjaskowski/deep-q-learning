@@ -184,4 +184,4 @@ def random_on_mountain_car_game():
 
     teacher.teach(1)
 
-dqn_on_space_invaders(visualize=False)
+dqn_on_space_invaders(visualize=True)

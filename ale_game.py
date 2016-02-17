@@ -70,15 +70,15 @@ def init(pygame_on=False):
 
 class Phi(object):
     def __init__(self, skip_every):
-        self.prev_cropped = np.zeros((80, 80), dtype=np.int8)
-        self.prev_frames = [np.zeros((80, 80), dtype=np.int8), np.zeros((80, 80), dtype=np.int8), np.zeros((80, 80), dtype=np.int8), np.zeros((80, 80), dtype=np.int8)]
+        self.prev_cropped = np.zeros((80, 80), dtype=np.uint8)
+        self.prev_frames = [np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8)]
         self.frame_count = -1
         self.skip_every = skip_every
 
     def __call__(self, state):
         self.frame_count += 1
 
-        cropped = measure.block_reduce((np.reshape(state.astype(np.int8), (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        cropped = measure.block_reduce((np.reshape(state.astype(np.uint8), (210, 160))[35:-15, :]), (2, 2), func=np.max)
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)
@@ -98,6 +98,7 @@ class SpaceInvadersGameCombined2Visualizer:
 
     def show(self, prev_frames):
         import pygame
+        print("frames: ", prev_frames)
         l = lambda x: gray_scale_lookup[x]
         f_l = np.frompyfunc(l, 1, 3)
         rect = pygame.Surface((160, 640))

@@ -40,6 +40,42 @@ def build_cnn(n_actions, input_var=None):
     return network
 
 
+class SmartReplayMemory(object):
+    def __init__(self, size=1000000, grace=10000):
+        self.max_size = size
+        self.grace = grace
+        self.s = []
+        self.a = []
+        self.r = []
+        self.fri = []
+
+    def init_state(self, s0):
+        self.s[-1] = s0
+
+    def append(self, a0, r0, fri, s1):
+        self.s.append(a0)
+        self.s.append(r0)
+        self.s.append(fri)
+        self.s.append(s1)
+
+        if len(self) > self.max_size + self.grace:
+            self.s = self.s[self.grace:]
+            self.a = self.a[self.grace:]
+            self.r = self.r[self.grace:]
+            self.fri = self.fri[self.grace:]
+
+    def sample(self, sample_size):
+        import random
+        indices = random.sample(xrange(len(self)), sample_size)
+        return [self[i] for i in indices]
+
+    def __len__(self):
+        return len(self.a)
+
+    def __getitem__(self, idx):
+        return self.s[idx], self.a[idx], self.r[idx], self.fri[idx], self.s[idx + 1]
+
+
 class ReplayMemory(object):
     def __init__(self, size=1000000, grace=10000):
         self.max_size = size
@@ -73,6 +109,7 @@ class ReplayMemory(object):
 
 class DQNAlgo:
     def __init__(self, n_actions, replay_memory, initial_weights_file=None):
+        self.n_parameter_updates = 0
         self.ignore_feedback = False
         self.alpha = 0.00025
         # update frequency ?
@@ -173,13 +210,14 @@ class DQNAlgo:
     def feedback(self, exp):
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
+
         if self.ignore_feedback:
             return
 
         self.replay_memory.append(self.a_lookup[exp.a0], min(1, max(-1, exp.r0)), 1 - int(exp.game_over),
                                   self._prep_state(exp.s1))
 
-        if len(self.replay_memory) > self.replay_start_size:
+        if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
 
             s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
@@ -194,17 +232,20 @@ class DQNAlgo:
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
-            if self.i_frames % 5000 < 50:
+            self.n_parameter_updates += 1
+
+            if self.i_frames % 5000 < 500:
                 print('loss: ', t[0], t[1])
                 print('a0: ', a0)
+                print('future_reward_indicators: ', future_reward_indicators)
+                print('r0: ', r0)
 
             if self.i_frames % 5000 < 10:
                 print('y, q: ', t[2], t[3])
                 print('out: ', t[4])
                 print('out_stale: ', t[5])
 
-
-            if self.i_frames % self.target_network_update_frequency == 0:
+            if self.n_parameter_updates % self.target_network_update_frequency == 0:
                 self._update_network_stale()
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
@@ -225,7 +266,6 @@ def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamm
     out_stale.tag.test_value = np.random.rand(32, 6).astype(dtype=theano.config.floatX)
 
     y = r0_var + gamma * future_reward_indicator_var * T.max(out_stale, axis=1, keepdims=True)  # 32 x 1
-
     q = T.sum(a0_var * out, axis=1, keepdims=True)  # 32 x 1
     err = y - q
     loss = err ** 2
