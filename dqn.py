@@ -68,7 +68,7 @@ class ReplayMemory(object):
         return int((len(self.list) - 1) / 4)
 
     def __getitem__(self, idx):
-        return tuple(self.list[idx*4:idx*4+5])
+        return tuple(self.list[idx * 4:idx * 4 + 5])
 
 
 class DQNAlgo:
@@ -79,7 +79,7 @@ class DQNAlgo:
         # gradient momentum ? 0.95
         # squared gradient momentum ? 0.95
         # min squared gradient ? 0.01
-        self.save_every_n_frames = 100000 # ~ once per hour
+        self.save_every_n_frames = 100000  # ~ once per hour
 
         self.final_exploration_frame = 1000000
         self.replay_start_size = 50000
@@ -93,11 +93,13 @@ class DQNAlgo:
         self.replay_memory = replay_memory
 
         self.minibatch_size = 32
-        #self.replay_memory_size = 1000000
+        # self.replay_memory_size = 1000000
 
         self.target_network_update_frequency = 10000
 
-        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.tensor4("s0", dtype=theano.config.floatX), T.bmatrix("a0"), T.wcol(
+        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.tensor4("s0",
+                                                                                dtype=theano.config.floatX), T.bmatrix(
+            "a0"), T.wcol(
             "r0"), T.tensor4("s1", dtype=theano.config.floatX), T.bcol(
             "future_reward_indicator")
         self.n_actions = n_actions
@@ -119,18 +121,22 @@ class DQNAlgo:
 
         self._update_network_stale()
 
-        self.loss, self.err = build_loss(self.network, self.network_stale,
-                               (s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var), self.gamma)
+        self.loss, self.err, __y, __q = build_loss(out=lasagne.layers.get_output(self.network),
+                                                   out_stale=lasagne.layers.get_output(self.network_stale),
+                                                   a0_var=a0_var,
+                                                   r0_var=r0_var,
+                                                   future_reward_indicator_var=future_reward_indicator_var,
+                                                   gamma=self.gamma)
 
         params = lasagne.layers.get_all_params(self.network, trainable=True)
         updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=1.0, rho=0.95,
                                           epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
         print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
-                                        [self.loss, self.err], updates=updates)
+                                        [self.loss, self.err, T.transpose(__y), T.transpose(__q)], updates=updates)
         print("Compiling loss_fn.")
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
-                                        self.loss)
+                                       self.loss)
 
     def init_state(self, state):
         self.state = self._prep_state(state)
@@ -147,7 +153,8 @@ class DQNAlgo:
         import random
         if self.i_frames < self.final_exploration_frame:
             if self.i_frames % 10000 == 50:
-                self.epsilon = (self.final_epsilon - self.initial_epsilon) * (self.i_frames / self.final_exploration_frame) + self.initial_epsilon
+                self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
+                self.i_frames / self.final_exploration_frame) + self.initial_epsilon
                 print("epsilon: ", self.epsilon)
         else:
             self.epsilon = self.final_epsilon
@@ -167,7 +174,8 @@ class DQNAlgo:
         if self.ignore_feedback:
             return
 
-        self.replay_memory.append(self.a_lookup[exp.a0], min(1, max(-1, exp.r0)), 1-int(exp.game_over), self._prep_state(exp.s1))
+        self.replay_memory.append(self.a_lookup[exp.a0], min(1, max(-1, exp.r0)), 1 - int(exp.game_over),
+                                  self._prep_state(exp.s1))
 
         if len(self.replay_memory) > self.replay_start_size:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
@@ -184,7 +192,7 @@ class DQNAlgo:
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
-            if self.i_frames % 5000 < 50:
+            if self.i_frames % 5000 < 500:
                 print('loss: ', t)
 
             if self.i_frames % self.target_network_update_frequency == 0:
@@ -196,9 +204,7 @@ class DQNAlgo:
             np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
 
 
-def build_loss(network, network_stale, exp_var, gamma):
-    s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = exp_var
-
+def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamma):
     # s0_var mini_batch x 4 x,80 x 80
     # a0_var mini_batch x 1,
     # r0_var mini_batch x 1,
@@ -206,15 +212,12 @@ def build_loss(network, network_stale, exp_var, gamma):
     future_reward_indicator_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int8)
     r0_var.tag.test_value = np.random.rand(32, 1).astype(dtype=np.int16)
     a0_var.tag.test_value = np.random.rand(32, 6).astype(dtype=np.int8)
-
-    qs = lasagne.layers.get_output(network_stale, deterministic=True)  # 32 x 6
-    qs.tag.test_value = np.random.rand(32, 6).astype(dtype=theano.config.floatX)
-    y = r0_var + gamma * future_reward_indicator_var * T.max(qs, axis=1)  # 32 x 1
-
-    out = lasagne.layers.get_output(network, deterministic=True)  # 32 x 6
     out.tag.test_value = np.random.rand(1, 6).astype(dtype=theano.config.floatX)
-    q = T.sum(T.dot(a0_var, T.transpose(out)), axis=1)  # 32 x 1
+    out_stale.tag.test_value = np.random.rand(32, 6).astype(dtype=theano.config.floatX)
+
+    y = r0_var + gamma * future_reward_indicator_var * T.max(out_stale, axis=1, keepdims=True)  # 32 x 1
+
+    q = T.sum(a0_var * out, axis=1, keepdims=True)  # 32 x 1
     err = y - q
-    #err = T.max(T.stack(T.neg(T.ones_like(err)), T.min(T.stack(T.ones_like(err), err), axis=0)), axis=0) # cap with -1 and 1 elementwise
     loss = err ** 2
-    return loss.mean(), (y-q).mean()  # TODO or sum? -> alpha depends on that.
+    return loss.mean(), (y - q).mean(), y, q
