@@ -207,4 +207,5 @@ except getopt.GetoptError:
 #         initial_weights_file = arg
 
 #dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
-dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
+#dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
+dqn_on_space_invaders(visualize=True, initial_weights_file=None, ignore_feedback=False)

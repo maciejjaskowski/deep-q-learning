@@ -22,7 +22,7 @@ class MyTestCase(unittest.TestCase):
         f = theano.function([a0_var, r0_var, fri_var, out, out_stale],
                             dqn.build_loss(out, out_stale, a0_var, r0_var, fri_var, gamma=0.5))
 
-        sqr_mean, mean, y, q = f(np.array([[1, 0, 0, 0, 0, 0],
+        loss, not_loss, y, q = f(np.array([[1, 0, 0, 0, 0, 0],
                                            [0, 1, 0, 0, 0, 0]]),
                                  np.array([[1],
                                            [0]]),
@@ -35,8 +35,9 @@ class MyTestCase(unittest.TestCase):
 
         self.assertTrue(np.all(y == [[3.5], [3]]))
         self.assertTrue(np.all(q == [[-5], [4]]))
-        self.assertTrue(sqr_mean == 1)
-        self.assertTrue(mean == 3.75)
+        print(loss)
+        print(not_loss)
+        self.assertTrue(loss == 8.5)
 
     def test_validity2(self):
         theano.config.on_unused_input = 'warn'
