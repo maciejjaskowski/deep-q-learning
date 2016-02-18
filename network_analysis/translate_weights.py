@@ -1,3 +1,8 @@
+""" Converts a .npz file to something human-readable
+Usage:
+python translate_weights.py weight.npz readable.txt
+"""
+
 import numpy
 import sys
 

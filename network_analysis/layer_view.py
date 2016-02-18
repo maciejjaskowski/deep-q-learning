@@ -1,8 +1,8 @@
-""" Utility to plot the first layer of convolutions learned by
-the Deep q-network.
+""" Utility to plot the indicated layer of convolutions learned by
+the Deep q-network, with the first layer corresponding to 0.
 (Assumes dnn convolutions)
 Usage:
-plot_filters.py PICKLED_NN_FILE
+python layer_view.py weight.npz layer_integer
 """
 
 import sys
