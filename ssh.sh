@@ -1,3 +1,4 @@
 #!/bin/bash
-echo "sshing to ec2-54-174-159-174.compute-1.amazonaws.com "
-ssh -i  ~/.ssh/gpu-east.pem ubuntu@ec2-54-174-159-174.compute-1.amazonaws.com $1
+INSTANCE=`cat provision/instance.dns`
+echo "sshing to $INSTANCE"
+ssh -i  ~/.ssh/gpu-east.pem ubuntu@$INSTANCE $1
