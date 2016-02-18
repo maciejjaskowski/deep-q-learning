@@ -244,6 +244,11 @@ class DQNAlgo:
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
 
+    def log(self, *args):
+        import datetime
+        if self.i_frames % 100 < self.log_frequency:
+            print(str(datetime.datetime.now()), *args)
+
     def init_state(self, state):
         self.state = self._prep_state(state)
         self.replay_memory.init_state(self.state)
@@ -273,7 +278,7 @@ class DQNAlgo:
 
     def best_action(self):
         q = self.forward(self.state)
-        print("q: ", q)
+        self.log("q: ", q)
         return np.argmax(q)
 
     def feedback(self, exp):
@@ -303,19 +308,17 @@ class DQNAlgo:
 
             self.n_parameter_updates += 1
 
-            if self.i_frames % 5000 < self.log_frequency:
-                print('loss: ', t[0], t[1])
+            self.log('loss: ', t[0], t[1])
 
-            if self.i_frames % 5000 < self.log_frequency:
-                print('y, q: ', t[2], t[3])
-                print('out: ', t[4])
-                print('out_stale: ', t[5])
+            self.log('y, q: ', t[2], t[3])
+            self.log('out: ', t[4])
+            self.log('out_stale: ', t[5])
 
             if self.n_parameter_updates % self.target_network_update_frequency == 0:
                 self._update_network_stale()
 
         if self.i_frames % 10000 == 100:
-            print("Processed frames: ", self.i_frames)
+            self.log("Processed frames: ", self.i_frames)
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
             filename = 'weights_' + str(self.i_frames) + '.npz'

@@ -83,7 +83,7 @@ def dqn_on_space_invaders_cpu(visualize=False, theano_verbose=False, initial_wei
     dqn_algo.epsilon = 0.1
     dqn_algo.initial_epsilon = 0.1
     dqn_algo.final_epsilon = 0.1
-    dqn_algo.log_frequency = 500
+    dqn_algo.log_frequency = 10
 
     dqn_algo.ignore_feedback = ignore_feedback
     # dqn_algo.ignore_feedback = True
@@ -94,7 +94,7 @@ def dqn_on_space_invaders_cpu(visualize=False, theano_verbose=False, initial_wei
     teacher.teach(500000)
 
 
-def dqn_on_space_invaders_play(initial_weights_file, visualize=True):
+def dqn_on_space_invaders_play(initial_weights_file, visualize='q'):
     import q_learning as q
     import ale_game as ag
     import dqn
@@ -102,7 +102,7 @@ def dqn_on_space_invaders_play(initial_weights_file, visualize=True):
     reload(ag)
     reload(dqn)
 
-    ale = ag.init()
+    ale = ag.init(display_screen = visualize == 'ale')
     game = ag.SpaceInvadersGame(ale)
 
     def new_game():
@@ -119,11 +119,12 @@ def dqn_on_space_invaders_play(initial_weights_file, visualize=True):
     dqn_algo.initial_epsilon = 0.1
     dqn_algo.final_epsilon = 0.1
     dqn_algo.ignore_feedback = True
+    dqn_algo.log_frequency = 1
 
-    visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
+    visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize == 'q' else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
                         ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
-    teacher.teach(500000)
+    return teacher.teach(200)
 
 
 def const_on_space_invaders():
@@ -257,4 +258,10 @@ def random_on_mountain_car_game():
 #dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
 #dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
 #dqn_on_space_invaders_gpu(visualize=True, initial_weights_file=None, ignore_feedback=False)
-dqn_on_space_invaders_play(visualize=True, initial_weights_file='analysis/weights_900100.npz')
+
+import cPickle as pickle
+
+#results = dqn_on_space_invaders_play(visualize=None, initial_weights_file='analysis/sth_working_900000.npz')
+#results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file='analysis/sth_working_900000.npz')
+results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/sth_working_900000.npz')
+#pickle.dump(results, open("results_900000.pickled", "wb"))

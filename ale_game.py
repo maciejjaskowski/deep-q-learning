@@ -22,7 +22,7 @@ from scipy import signal
 # ale.setString("record_screen_dir", "record")
 
 # Load the ROM file
-# ale.setBool('display_screen', True)
+
 
 ARR = {0: (0, 0, 0),
        6: (200, 200, 0),
@@ -55,16 +55,18 @@ mergeArrValuesSet = set(mergeArr.values())
 mergeArrValues = sorted(list(mergeArrValuesSet))
 
 
-def init(pygame_on=False):
-    if pygame_on:
+def init(display_screen=False):
+    if display_screen:
         import pygame
         pygame.init()
     rom_path = '.'
     ale = ALEInterface()
+    ale.setBool('display_screen', display_screen)
     ale.setInt('random_seed', 123)
-    #ale.setBool('frame_skip', 1)
+    ale.setBool('frame_skip', 1)
     ale.loadROM(rom_path + '/space_invaders.bin')
     ale.setFloat("repeat_action_probability", 0)
+
     return ale
 
 
