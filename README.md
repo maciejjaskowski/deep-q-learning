@@ -53,3 +53,11 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 [Concurrent Q-learning for Autonomous Mapping and Navigation](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.155.616&rep=rep1&type=pdf) One-trial learning???
 
 [Using Reinforcement Learning to Adapt an Imitation Task](http://lasa.epfl.ch/publications/uploadedFiles/IROS07.pdf) Overcoming new obstacles ???
+
+[On the importance of initialization and momentum in deep learning](http://jmlr.org/proceedings/papers/v28/sutskever13.pdf) - Nesterov Momentum vs Nesterov Accelerated Gradient
+
+[CNN Features off-the-shelf: an Astounding Baseline for Recognition](http://arxiv.org/pdf/1403.6382v3.pdf) NN generated features are better then manually-made
+
+[Prioritized Experience Replay](http://arxiv.org/pdf/1511.05952v3.pdf) - on Atari games
+
+[Network in Network](http://arxiv.org/pdf/1312.4400v3.pdf) - MaxPooling looses information, let's keep some more information.
