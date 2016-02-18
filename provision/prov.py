@@ -1,4 +1,6 @@
 import provision
+from subprocess import call
+import time
 
 instance = provision.provision('000000000006', 'us-east-1a')
 instance = provision.provision('000000000006', 'us-east-1a')
@@ -10,3 +12,7 @@ with open('instance.dns', 'w') as f:
 
 provision.attach_volume(instance['instance'])
 
+time.sleep(10000)
+ret = call(["./mount.sh"])
+if ret != 0:
+  print("Problem ", ret)
