@@ -234,7 +234,7 @@ class DQNAlgo:
                                                    gamma=self.gamma)
 
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=1.0, rho=0.95,
+        updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=0.0002, rho=0.95,
                                           epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
         print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
@@ -249,6 +249,7 @@ class DQNAlgo:
         self.replay_memory.init_state(self.state)
 
     def _update_network_stale(self):
+        print("Updating stale network.")
         lasagne.layers.set_all_param_values(self.network_stale, lasagne.layers.get_all_param_values(self.network))
 
     @staticmethod
