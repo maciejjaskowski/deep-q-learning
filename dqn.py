@@ -10,12 +10,69 @@ import theano.tensor as T
 import lasagne
 
 
-#lasagne.layers.cuda_convnet.Conv2DCCLayer
+
+
+def build_cnn_gpu(n_actions, input_var):
+    from lasagne.layers import dnn
+
+    l_in = lasagne.layers.InputLayer(
+        shape=(32, 4, 80, 80)
+    )
+
+    l_conv1 = dnn.Conv2DDNNLayer(
+        l_in,
+        num_filters=32,
+        filter_size=(8, 8),
+        stride=(4, 4),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_conv2 = dnn.Conv2DDNNLayer(
+        l_conv1,
+        num_filters=64,
+        filter_size=(4, 4),
+        stride=(2, 2),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_conv3 = dnn.Conv2DDNNLayer(
+        l_conv2,
+        num_filters=64,
+        filter_size=(3, 3),
+        stride=(1, 1),
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_hidden1 = lasagne.layers.DenseLayer(
+        l_conv3,
+        num_units=512,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    l_out = lasagne.layers.DenseLayer(
+        l_hidden1,
+        num_units=n_actions,
+        nonlinearity=None,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1)
+    )
+
+    return l_out
 
 
 def build_cnn(n_actions, input_var=None):
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)
+
+
 
     network = lasagne.layers.Conv2DLayer(
         network, num_filters=32, filter_size=(8, 8), stride=4,
@@ -151,11 +208,11 @@ class DQNAlgo:
         self.n_actions = n_actions
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
-        self.network = build_cnn(n_actions=self.n_actions, input_var=s0_var)
+        self.network = build_cnn(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256))
         print("Compiling forward.")
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
-        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=s1_var)
+        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256))
         print("Compiling forward stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
@@ -181,7 +238,8 @@ class DQNAlgo:
                                           epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
         print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
-                                        [self.loss, self.err, T.transpose(__y), T.transpose(__q), out, out_stale ], updates=updates)
+                                        [self.loss, self.err, T.transpose(__y), T.transpose(__q), out, out_stale],
+                                        updates=updates)
         print("Compiling loss_fn.")
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
@@ -202,7 +260,7 @@ class DQNAlgo:
         if self.i_frames < self.final_exploration_frame:
             if self.i_frames % 10000 == 50:
                 self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
-                self.i_frames / self.final_exploration_frame) + self.initial_epsilon
+                    self.i_frames / self.final_exploration_frame) + self.initial_epsilon
                 print("epsilon: ", self.epsilon)
         else:
             self.epsilon = self.final_epsilon
