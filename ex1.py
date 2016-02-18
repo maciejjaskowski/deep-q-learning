@@ -257,4 +257,4 @@ def random_on_mountain_car_game():
 #dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
 #dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
 #dqn_on_space_invaders_gpu(visualize=True, initial_weights_file=None, ignore_feedback=False)
-dqn_on_space_invaders_play(visualize=True, initial_weights_file='weights_100100.npz')
+dqn_on_space_invaders_play(visualize=True, initial_weights_file='analysis/weights_900100.npz')

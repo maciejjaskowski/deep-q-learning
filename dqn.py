@@ -273,16 +273,18 @@ class DQNAlgo:
 
     def best_action(self):
         q = self.forward(self.state)
+        print("q: ", q)
         return np.argmax(q)
 
     def feedback(self, exp):
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
+        self.state = self._prep_state(exp.s1)
         if self.ignore_feedback:
             return
 
         self.replay_memory.append(self.a_lookup[exp.a0], min(1, max(-1, exp.r0)), 1 - int(exp.game_over),
-                                  self._prep_state(exp.s1))
+                                  self.state)
 
         if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
