@@ -1,18 +1,29 @@
 import provision
 from subprocess import call
 import time
+import boto3
+import sys
 
-instance = provision.provision('000000000006', 'us-east-1a')
-instance = provision.provision('000000000006', 'us-east-1a')
-with open('ssh.sh', 'w') as f:
-  f.write("""#!/bin/bash\necho "sshing to """ + str(instance['public_dns_name']) + """ "\nssh -i  ~/.ssh/gpu-east.pem ubuntu@""" + str(instance['public_dns_name']) + " $1")
+ec2 = boto3.client('ec2')
+
+provisionId = sys.argv[1].zfill(10)
+print('provisionId: ', provisionId)
+
+instance = provision.provision(provisionId, 'us-east-1a')
+instance = provision.provision(provisionId, 'us-east-1a')
+print(instance['public_dns_name'])
+
+# print("Wait until running.")
+# ec2.wait_until_running(Filters=[{'Name': 'instance-id', 'Values': instance['instance']['InstanceId']}])
+#
+# print("Running!")
 
 with open('instance.dns', 'w') as f:
   f.write(str(instance['public_dns_name']))
 
-provision.attach_volume(instance['instance'])
+#provision.attach_volume(instance['instance'])
 
-time.sleep(10000)
-ret = call(["./mount.sh"])
-if ret != 0:
-  print("Problem ", ret)
+#time.sleep(10000)
+#ret = call(["./mount.sh"])
+#if ret != 0:
+#  print("Problem ", ret)

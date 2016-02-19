@@ -20,6 +20,8 @@ def prices():
 def provision(client_token, availability_zone):
     user_data = """#!/bin/bash
     cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
+
+    docker run  --rm -d --name dqn -v /home/ubuntu/dqn:/mnt/dqn $DOCKER_NVIDIA_DEVICES mjaskowski/dqn /mnt/dqn/deep-q-learning/run-gpu
     """
 
     #dev_sda1 = ec2.blockdevicemapping.EBSBlockDeviceType()
@@ -27,12 +29,16 @@ def provision(client_token, availability_zone):
     #bdm = ec2.blockdevicemapping.BlockDeviceMapping()
     #bdm['/dev/sda1'] = dev_sda1
 
+#ec2.wait_until_exists
+#wait_until_running()
+#/dev/sdf    /data   ext3    defaults    1 1
+#overlayroot http://stackoverflow.com/questions/19575348/tricks-to-make-an-aws-spot-instance-persistent
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
                                         SpotPrice='0.20',
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
-                                        Type='one-time',  # 'persistent'
+                                        Type='persistent',
                                         LaunchSpecification={
                                             'ImageId': 'ami-876553ed',
                                             'KeyName': 'gpu-east',
@@ -41,11 +47,11 @@ def provision(client_token, availability_zone):
                                                 'AvailabilityZone': availability_zone
                                             },
                                             'BlockDeviceMappings': [{
-                                                'VirtualName': '',
                                                 'DeviceName': '/dev/sda1',
                                                 'Ebs': {
-                                                    'VolumeSize': 30,
-                                                    'DeleteOnTermination': True,
+                                                    'VolumeSize': 50,
+                                                    'SnapshotId': 'snap-733a260c',
+                                                    'DeleteOnTermination': False,
                                                     'VolumeType': 'standard',
                                                     'Encrypted': False
                                                 }
@@ -81,6 +87,9 @@ def provision(client_token, availability_zone):
             public_dns_name = instance_description['Reservations'][0]['Instances'][0]['PublicDnsName']
             break
         time.sleep(1)
+    # print("Wait until Running!")
+    # result.wait_until_running()
+    # print("Running!")
 
     return {
         'status': instance['Status'],

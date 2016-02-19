@@ -19,7 +19,7 @@ def random_on_space_invaders():
     teacher.teach(1)
 
 
-def dqn_on_space_invaders_gpu(visualize=False, theano_verbose=False, initial_weights_file=None):
+def dqn_on_space_invaders_gpu(visualize=False, theano_verbose=False, initial_weights_file=None, initial_i_frame=0):
     import q_learning as q
     import ale_game as ag
     import dqn
@@ -27,6 +27,9 @@ def dqn_on_space_invaders_gpu(visualize=False, theano_verbose=False, initial_wei
     reload(q)
     reload(ag)
     reload(dqn)
+
+    print("Using weights from file: ", initial_weights_file)
+
     if theano_verbose:
         theano.config.compute_test_value = 'warn'
         theano.config.exception_verbosity = 'high'
@@ -44,6 +47,15 @@ def dqn_on_space_invaders_gpu(visualize=False, theano_verbose=False, initial_wei
 
     replay_memory = dqn.ReplayMemory(size=500000)
     dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file)
+
+    if initial_weights_file:
+        dqn_algo.replay_start_size = 250000
+        dqn_algo.epsilon = 0.1
+        dqn_algo.final_epsilon = 0.1
+        dqn_algo.initial_epsilon = 0.1
+        dqn_algo.i_frames = initial_i_frame
+
+    print(str(dqn_algo))
 
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
@@ -88,13 +100,73 @@ def dqn_on_space_invaders_cpu(visualize=False, theano_verbose=False, initial_wei
     dqn_algo.ignore_feedback = ignore_feedback
     # dqn_algo.ignore_feedback = True
 
+    print(str(dqn_algo))
+
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
                         ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
     teacher.teach(500000)
 
 
-def dqn_on_space_invaders_play(initial_weights_file, visualize='q'):
+class Plot(object):
+
+    def __init__(self):
+        import matplotlib.pyplot as plt
+        plt.ion()
+        self.fig = plt.figure()
+        plt.title('Surprise')
+        plt.ylabel('Surprise (red), Expectation (blue)')
+        plt.xlabel('frame')
+
+        self.expectation = self.fig.add_subplot(2, 1, 1)
+        self.expectations_l, = self.expectation.plot([], [], color='b', linestyle='-', lw=2)
+        self.expectation.set_xlim([0, 105])
+        self.expectation.set_ylim([-5, 10])
+
+        self.surprise = self.fig.add_subplot(2, 1, 2)
+        self.surprise_l, = self.surprise.plot([], [], color='r', linestyle='-', lw=2)
+        self.surprise.set_xlim([0, 105])
+        self.surprise.set_ylim([-5, 5])
+
+        self.expectations_y = []
+        self.surprise_y = []
+        self.i = 0
+        self.print_every_n = 1
+
+    def show(self, info):
+        self.i += 1
+
+        self.expectations_y.append(info['expectations'])
+        self.surprise_y.append(info['surprise'])
+        if len(self.expectations_y) > 100:
+            self.expectations_y = self.expectations_y[1:]
+            self.surprise_y = self.surprise_y[1:]
+
+        print(info)
+        if self.i % self.print_every_n == 0:
+            self.expectations_l.set_xdata(list(range(len(self.expectations_y))))
+            self.expectations_l.set_ydata(self.expectations_y)
+            self.surprise_l.set_xdata(list(range(len(self.surprise_y))))
+            self.surprise_l.set_ydata(self.surprise_y)
+
+            # self.mi.set_xdata([self.xlim[0]] * 2)
+            # self.mi.set_ydata([-0.08, 0.08])
+            # self.ma.set_xdata([self.xlim[1]] * 2)
+            # self.ma.set_ydata([-0.08, 0.08])
+
+            #pos = np.arange(-1.2, 0.5, 0.05)
+            #vel = np.arange(-0.07, 0.07, 0.005)
+
+            #self.expectation.line(expectations)
+
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+            #time.sleep(0.01)
+
+
+
+def dqn_on_space_invaders_play(initial_weights_file, visualize='q', show_mood=False):
     import q_learning as q
     import ale_game as ag
     import dqn
@@ -102,7 +174,9 @@ def dqn_on_space_invaders_play(initial_weights_file, visualize='q'):
     reload(ag)
     reload(dqn)
 
-    ale = ag.init(display_screen = visualize == 'ale')
+    print("Using weights from file: ", initial_weights_file)
+
+    ale = ag.init(display_screen=(visualize == 'ale'))
     game = ag.SpaceInvadersGame(ale)
 
     def new_game():
@@ -119,12 +193,31 @@ def dqn_on_space_invaders_play(initial_weights_file, visualize='q'):
     dqn_algo.initial_epsilon = 0.1
     dqn_algo.final_epsilon = 0.1
     dqn_algo.ignore_feedback = True
-    dqn_algo.log_frequency = 1
+    dqn_algo.log_frequency = 0
+
+    import Queue
+    dqn_algo.mood_q = Queue.Queue() if show_mood else None
+
+    if show_mood:
+        plot = Plot()
+
+        def worker():
+            while True:
+                item = dqn_algo.mood_q.get()
+                plot.show(item)
+                dqn_algo.mood_q.task_done()
+
+        import threading
+        t = threading.Thread(target=worker)
+        t.daemon = True
+        t.start()
+
+    print(str(dqn_algo))
 
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize == 'q' else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
                         ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
-    return teacher.teach(200)
+    return teacher.teach(100)
 
 
 def const_on_space_invaders():
@@ -255,13 +348,25 @@ def random_on_mountain_car_game():
     teacher.teach(1)
 
 
+def latest(dir='.'):
+    import os, re
+    frames = [int(re.match(r"weights_([0-9]*).npz", file).groups()[0])
+             for file in os.listdir(dir) if file.startswith("weights_")]
+
+    return dir + '/weights_' + str(max(frames)) + '.npz', max(frames)
+
 #dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
 #dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
-#dqn_on_space_invaders_gpu(visualize=True, initial_weights_file=None, ignore_feedback=False)
 
-import cPickle as pickle
 
-#results = dqn_on_space_invaders_play(visualize=None, initial_weights_file='analysis/sth_working_900000.npz')
-#results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file='analysis/sth_working_900000.npz')
-results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/sth_working_900000.npz')
-#pickle.dump(results, open("results_900000.pickled", "wb"))
+#dqn_on_space_invaders_gpu(visualize=False, initial_weights_file=latest('.')[0], initial_i_frame=latest('.')[1])
+
+#results = dqn_on_space_invaders_play(visualize=None, initial_weights_file='analysis/sth_working_900000.npz', show_mood=False)
+
+
+results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file=latest('analysis')[0], show_mood=True)
+#results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file='analysis/weights_800100.npz', show_mood=True)
+#results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/weights_1000100.npz')
+#results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/weights_800100.npz')
+
+#pickle.dump(results, open("results_900000_new.pickled", "wb"))
