@@ -20,6 +20,18 @@ def prices():
 def provision(client_token, availability_zone):
     user_data = """#!/bin/bash
     cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
+
+    sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
+
+    apt-get install -y unzip
+    unzip awscli-bundle.zip
+    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+
+    sudo su ubuntu -c "aws s3 sync s3://dqn /home/ubuntu/dqn/deep-q-learning/weights"
+
+    watch -n 600 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/dqn/deep-q-learning/weights s3://dqn && echo `date` >> /home/ubuntu/last_sync '"
+
+    cd /home/ubuntu/dqn && ./run_docker.sh
     """
 
     #dev_sda1 = ec2.blockdevicemapping.EBSBlockDeviceType()
@@ -27,27 +39,30 @@ def provision(client_token, availability_zone):
     #bdm = ec2.blockdevicemapping.BlockDeviceMapping()
     #bdm['/dev/sda1'] = dev_sda1
 
+#ec2.wait_until_exists
+#wait_until_running()
+#/dev/sdf    /data   ext3    defaults    1 1
+#overlayroot http://stackoverflow.com/questions/19575348/tricks-to-make-an-aws-spot-instance-persistent
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
-                                        SpotPrice='0.20',
+                                        SpotPrice='0.15',
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
-                                        Type='one-time',  # 'persistent'
+                                        Type='persistent',
                                         LaunchSpecification={
-                                            'ImageId': 'ami-876553ed',
+                                            'ImageId': 'ami-0d7f4f67',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
                                                 'AvailabilityZone': availability_zone
                                             },
                                             'BlockDeviceMappings': [{
-                                                'VirtualName': '',
                                                 'DeviceName': '/dev/sda1',
                                                 'Ebs': {
-                                                    'VolumeSize': 30,
+                                                    'VolumeSize': 50,
                                                     'DeleteOnTermination': True,
                                                     'VolumeType': 'standard',
-                                                    'Encrypted': False
+                                                    'Encrypted': True
                                                 }
                                             }],
                                             'EbsOptimized': True,
@@ -71,8 +86,8 @@ def provision(client_token, availability_zone):
 
         if 'Fault' in instance.keys():
             return {
-                status: instance['Status'],
-                instance: instance
+                'status': instance['Status'],
+                'instance': instance
             }
 
         if 'InstanceId' in instance.keys():
@@ -81,6 +96,9 @@ def provision(client_token, availability_zone):
             public_dns_name = instance_description['Reservations'][0]['Instances'][0]['PublicDnsName']
             break
         time.sleep(1)
+    # print("Wait until Running!")
+    # result.wait_until_running()
+    # print("Running!")
 
     return {
         'status': instance['Status'],

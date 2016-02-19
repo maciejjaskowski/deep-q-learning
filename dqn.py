@@ -173,6 +173,8 @@ class ReplayMemory(object):
 
 class DQNAlgo:
     def __init__(self, n_actions, replay_memory, initial_weights_file=None):
+        self.mood_q = None
+        self.last_q = 0
         self.n_parameter_updates = 0
         self.ignore_feedback = False
         self.alpha = 0.00025
@@ -274,10 +276,11 @@ class DQNAlgo:
         if random.random() < self.epsilon:
             return random.randint(0, self.n_actions - 1)
         else:
-            return self.best_action()
+            return self._best_action()
 
-    def best_action(self):
+    def _best_action(self):
         q = self.forward(self.state)
+        self.last_q = np.max(q)
         self.log("q: ", q)
         return np.argmax(q)
 
@@ -285,11 +288,18 @@ class DQNAlgo:
         # exp -> s0 a0 r0 s1 game_over
         self.i_frames += 1
         self.state = self._prep_state(exp.s1)
+
+        r0_clipped = min(1, max(-1, exp.r0))
+        fri = 1 - int(exp.game_over)
+
+        if self.mood_q:
+            expectation = np.max(self.forward(self.state))
+            surprise = (r0_clipped + self.gamma * expectation) - self.last_q
+            self.mood_q.put({'surprise': surprise, "expectations": expectation})
+
         if self.ignore_feedback:
             return
-
-        self.replay_memory.append(self.a_lookup[exp.a0], min(1, max(-1, exp.r0)), 1 - int(exp.game_over),
-                                  self.state)
+        self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
 
         if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
@@ -321,9 +331,30 @@ class DQNAlgo:
             self.log("Processed frames: ", self.i_frames)
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
-            filename = 'weights_' + str(self.i_frames) + '.npz'
+            filename = 'weights/weights_' + str(self.i_frames) + '.npz'
             print("File saved: ", filename)
             np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
+
+    def __str__(self):
+        return """
+        self.mood_q = {self.mood_q}
+        self.last_q = {self.last_q}
+        self.n_parameter_updates = {self.n_parameter_updates}
+        self.ignore_feedback = {self.ignore_feedback}
+        self.alpha = {self.alpha}
+        self.save_every_n_frames = {self.save_every_n_frames}
+        self.final_exploration_frame = {self.final_exploration_frame}
+        self.replay_start_size = {self.replay_start_size}
+        self.i_frames = {self.i_frames}
+        self.state = {self.state}
+        self.initial_epsilon = {self.initial_epsilon}
+        self.final_epsilon = {self.final_epsilon}
+        self.epsilon = {self.epsilon}
+        self.gamma = {self.gamma}
+        self.log_frequency = {self.log_frequency}
+        self.minibatch_size = {self.minibatch_size}
+        self.target_network_update_frequency = {self.target_network_update_frequency}
+        """.format(**{'self': self})
 
 
 def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamma):

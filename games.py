@@ -130,7 +130,7 @@ class MountainCarGameVisualizer:
             vel = np.arange(-0.07, 0.07, 0.005)
 
             direction = pd.DataFrame(
-                [(_pos, _vel, self.algo.best_action(self.state_adapter((_pos, _vel)))) for _vel in vel for _pos in pos])
+                [(_pos, _vel, self.algo._best_action(self.state_adapter((_pos, _vel)))) for _vel in vel for _pos in pos])
             direction.columns = ["pos", "vel", "throttle"]
 
             col = {-1: 'red', 0: 'blue', 1: 'green'}
