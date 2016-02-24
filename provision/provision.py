@@ -21,6 +21,7 @@ def provision(client_token, availability_zone):
     user_data = """#!/bin/bash
     cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
+
     sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
 
     apt-get install -y unzip

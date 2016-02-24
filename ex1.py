@@ -364,7 +364,8 @@ def latest(dir='.'):
 #results = dqn_on_space_invaders_play(visualize=None, initial_weights_file='analysis/sth_working_900000.npz', show_mood=False)
 
 
-results = dqn_on_space_invaders_cpu(visualize=None, initial_weights_file=None)
+
+#results = dqn_on_space_invaders_cpu(visualize=None, initial_weights_file=None)
 results = dqn_on_space_invaders_play(visualize='q', initial_weights_file=latest('analysis')[0], show_mood=True)
 #results = dqn_on_space_invaders_play(visualize='q', initial_weights_file=None, show_mood=True)
 #results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file='analysis/weights_800100.npz', show_mood=True)
