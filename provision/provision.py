@@ -21,7 +21,18 @@ def provision(client_token, availability_zone):
     user_data = """#!/bin/bash
     cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
-    docker run  --rm -d --name dqn -v /home/ubuntu/dqn:/mnt/dqn $DOCKER_NVIDIA_DEVICES mjaskowski/dqn /mnt/dqn/deep-q-learning/run-gpu
+
+    sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
+
+    apt-get install -y unzip
+    unzip awscli-bundle.zip
+    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+
+    sudo su ubuntu -c "aws s3 sync s3://dqn /home/ubuntu/dqn/deep-q-learning/weights"
+
+    watch -n 600 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/dqn/deep-q-learning/weights s3://dqn && echo `date` >> /home/ubuntu/last_sync '"
+
+    cd /home/ubuntu/dqn && ./run_docker.sh
     """
 
     #dev_sda1 = ec2.blockdevicemapping.EBSBlockDeviceType()
@@ -35,7 +46,7 @@ def provision(client_token, availability_zone):
 #overlayroot http://stackoverflow.com/questions/19575348/tricks-to-make-an-aws-spot-instance-persistent
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
-                                        SpotPrice='0.20',
+                                        SpotPrice='0.15',
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='persistent',
@@ -51,9 +62,9 @@ def provision(client_token, availability_zone):
                                                 'Ebs': {
                                                     'VolumeSize': 50,
                                                     'SnapshotId': 'snap-3fb82a22',
-                                                    'DeleteOnTermination': False,
+                                                    'DeleteOnTermination': True,
                                                     'VolumeType': 'standard',
-                                                    'Encrypted': False
+                                                    'Encrypted': True
                                                 }
                                             }],
                                             'EbsOptimized': True,
@@ -77,8 +88,8 @@ def provision(client_token, availability_zone):
 
         if 'Fault' in instance.keys():
             return {
-                status: instance['Status'],
-                instance: instance
+                'status': instance['Status'],
+                'instance': instance
             }
 
         if 'InstanceId' in instance.keys():

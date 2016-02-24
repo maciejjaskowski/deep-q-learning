@@ -331,7 +331,7 @@ class DQNAlgo:
             self.log("Processed frames: ", self.i_frames)
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
-            filename = 'weights_' + str(self.i_frames) + '.npz'
+            filename = 'weights/weights_' + str(self.i_frames) + '.npz'
             print("File saved: ", filename)
             np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
 
