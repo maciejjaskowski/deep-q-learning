@@ -51,7 +51,7 @@ def provision(client_token, availability_zone):
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='persistent',
                                         LaunchSpecification={
-                                            'ImageId': 'ami-0d7f4f67',
+                                            'ImageId': 'ami-28645442',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
