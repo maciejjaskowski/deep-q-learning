@@ -40,7 +40,7 @@ def provision(client_token, availability_zone):
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='persistent',
                                         LaunchSpecification={
-                                            'ImageId': 'ami-876553ed',
+                                            'ImageId': 'ami-60675a0a',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
@@ -50,7 +50,7 @@ def provision(client_token, availability_zone):
                                                 'DeviceName': '/dev/sda1',
                                                 'Ebs': {
                                                     'VolumeSize': 50,
-                                                    'SnapshotId': 'snap-733a260c',
+                                                    'SnapshotId': 'snap-3fb82a22',
                                                     'DeleteOnTermination': False,
                                                     'VolumeType': 'standard',
                                                     'Encrypted': False
