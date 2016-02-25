@@ -18,40 +18,38 @@ def prices():
 
 
 def provision(client_token, availability_zone):
-    user_data = """#!/bin/bash
-    cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
+    def user_data(exp_name):
+        return """#!/bin/bash
+        cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
+
+        apt-get install -y unzip
+        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+        unzip awscli-bundle.zip
+        ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+
+        sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
+
+        sudo su ubuntu -c "aws s3 sync s3://dqn-setup /home/ubuntu/dqn-setup"
 
 
-    sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
+        sudo su ubuntu -c "git clone https://github.com/maciejjaskowski/deep-q-learning.git"
+        sudo su ubuntu -c "mkdir /home/ubuntu/deep-q-learning/weights"
+        sudo su ubuntu -c "mkdir /home/ubuntu/deep-q-learning/logs"
+        sudo su ubuntu -c "cp /home/ubuntu/dqn-setup/space_invaders.bin /home/ubuntu/deep-q-learning"
 
-    apt-get install -y unzip
-    unzip awscli-bundle.zip
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+        aws s3 mb s3://{exp_name}
 
-    sudo su ubuntu -c "aws s3 sync s3://dqn /home/ubuntu/dqn/deep-q-learning/weights"
+        watch -n 60 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/weights s3://{exp_name}/weights' && sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/logs s3://{exp_name}/logs' && echo `date` >> /home/ubuntu/last_sync"
+        """.format(**{"exp_name": exp_name})
 
-    watch -n 600 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/dqn/deep-q-learning/weights s3://dqn && echo `date` >> /home/ubuntu/last_sync '"
-
-    cd /home/ubuntu/dqn && ./run_docker.sh
-    """
-
-    #dev_sda1 = ec2.blockdevicemapping.EBSBlockDeviceType()
-    #dev_sda1.size = 30
-    #bdm = ec2.blockdevicemapping.BlockDeviceMapping()
-    #bdm['/dev/sda1'] = dev_sda1
-
-#ec2.wait_until_exists
-#wait_until_running()
-#/dev/sdf    /data   ext3    defaults    1 1
-#overlayroot http://stackoverflow.com/questions/19575348/tricks-to-make-an-aws-spot-instance-persistent
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
-                                        SpotPrice='0.15',
+                                        SpotPrice='0.251',
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='persistent',
                                         LaunchSpecification={
-                                            'ImageId': 'ami-60675a0a',
+                                            'ImageId': 'ami-315a675b',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
@@ -60,13 +58,15 @@ def provision(client_token, availability_zone):
                                             'BlockDeviceMappings': [{
                                                 'DeviceName': '/dev/sda1',
                                                 'Ebs': {
-                                                    'VolumeSize': 50,
-                                                    'SnapshotId': 'snap-3fb82a22',
+                                                    'VolumeSize': 25,
                                                     'DeleteOnTermination': True,
                                                     'VolumeType': 'standard',
                                                     'Encrypted': True
                                                 }
                                             }],
+                                            'IamInstanceProfile': {
+                                                'Name': 's3'
+                                            },
                                             'EbsOptimized': True,
                                             'Monitoring': {
                                                 'Enabled': True
