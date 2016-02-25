@@ -173,7 +173,7 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn):
+    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn=build_cnn):
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
