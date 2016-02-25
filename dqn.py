@@ -16,7 +16,8 @@ def build_cnn_gpu(n_actions, input_var):
     from lasagne.layers import dnn
 
     l_in = lasagne.layers.InputLayer(
-        shape=(32, 4, 80, 80)
+        shape=(32, 4, 80, 80),
+        input_var=input_var
     )
 
     l_conv1 = dnn.Conv2DDNNLayer(
@@ -172,7 +173,7 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, initial_weights_file=None):
+    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn):
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0

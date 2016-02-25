@@ -63,7 +63,7 @@ def init(display_screen=False):
     ale = ALEInterface()
     ale.setBool('display_screen', display_screen)
     ale.setInt('random_seed', 123)
-    ale.setBool('frame_skip', 1)
+    #ale.setBool('frame_skip', 1)
     ale.loadROM(rom_path + '/space_invaders.bin')
     ale.setFloat("repeat_action_probability", 0)
 
@@ -80,7 +80,7 @@ class Phi(object):
     def __call__(self, state):
         self.frame_count += 1
 
-        cropped = measure.block_reduce((np.reshape(state.astype(np.uint8), (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)

@@ -22,25 +22,39 @@ def provision(client_token, availability_zone):
         return """#!/bin/bash
         cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
+        cd /home/ubuntu
         apt-get install -y unzip
         curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
         unzip awscli-bundle.zip
         ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
 
-        sudo su ubuntu -c "mkdir /home/ubuntu/.aws"
+
+        apt-get install -y libfreetype6-dev
+        pip install scikit-image
+
+        apt-get install -y daemontools
+
+        sudo su ubuntu -c "mkdir -p /home/ubuntu/.aws"
 
         sudo su ubuntu -c "aws s3 sync s3://dqn-setup /home/ubuntu/dqn-setup"
 
 
         sudo su ubuntu -c "git clone https://github.com/maciejjaskowski/deep-q-learning.git"
-        sudo su ubuntu -c "mkdir /home/ubuntu/deep-q-learning/weights"
-        sudo su ubuntu -c "mkdir /home/ubuntu/deep-q-learning/logs"
-        sudo su ubuntu -c "cp /home/ubuntu/dqn-setup/space_invaders.bin /home/ubuntu/deep-q-learning"
+        sudo su ubuntu -c "git reset --hard {sha1}"
+        sudo su ubuntu -c "mkdir -p /home/ubuntu/deep-q-learning/weights"
+        sudo su ubuntu -c "mkdir -p /home/ubuntu/deep-q-learning/logs"
+        sudo su ubuntu -c "cp /home/ubuntu/dqn-setup/space_invaders.bin /home/ubuntu/deep-q-learning/"
+
+        sudo su ubuntu -c "aws s3 sync s3://{exp_name}/weights /home/ubuntu/deep-q-learning/weights"
 
         aws s3 mb s3://{exp_name}
 
         watch -n 60 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/weights s3://{exp_name}/weights' && sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/logs s3://{exp_name}/logs' && echo `date` >> /home/ubuntu/last_sync"
-        """.format(**{"exp_name": exp_name})
+
+        python ex1.py 2> log.err | multilog t s4000000 ./logs
+        """.format(**{"exp_name": exp_name, "sha1": "cb2a37e"})
+
+    print(user_data("dqn2"))
 
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
@@ -71,7 +85,7 @@ def provision(client_token, availability_zone):
                                             'Monitoring': {
                                                 'Enabled': True
                                             },
-                                            'UserData': base64.b64encode(user_data.encode("ascii")).decode('ascii'),
+                                            'UserData': base64.b64encode(user_data("dqn2").encode("ascii")).decode('ascii'),
                                             'SecurityGroupIds': ['sg-ab1236d2'],
 
                                         })
