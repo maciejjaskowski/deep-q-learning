@@ -16,6 +16,10 @@ output is the same control commands as a human would have with a controller
 * [Arcade Learning Environment (ALE) 0.5.1](arcadelearningenvironment.org)
 * Atari 2600 ROM of space_invaders.bin
 
+## Amazon Instance Installation
+
+Look at /provision/aws_installation.sh for a concise shell history to install
+the environment.
 
 ## External References
 
@@ -31,7 +35,7 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [Prioritized Experience Replay](http://arxiv.org/abs/1511.05952) - drawing from the memory should be more likely if the memory is more shocking
 
-[Deep Recurrent Q-Learning For Partially Observable MDPs](http://arxiv.org/pdf/1507.06527.pdf) - by using LSTM you can get rid of preprocessing done in DQN paper. 
+[Deep Recurrent Q-Learning For Partially Observable MDPs](http://arxiv.org/pdf/1507.06527.pdf) - by using LSTM you can get rid of preprocessing done in DQN paper.
 "The recurrent net can better adapt at evaluation time if the quality of observations changes"
 
 [A fast learning algorithm for deep belief nets](http://www.cs.toronto.edu/~hinton/absps/fastnc.pdf) - Training one layer at a time
