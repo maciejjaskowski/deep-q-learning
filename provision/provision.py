@@ -18,52 +18,45 @@ def prices():
 
 
 def provision(client_token, availability_zone):
-    def user_data(exp_name):
+    def user_data(**kargs):
         return """#!/bin/bash
         cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
-        cd /home/ubuntu
-        apt-get install -y unzip
-        curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-        unzip awscli-bundle.zip
-        ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+        cd /home/{user_name}
+
+        sudo su {user_name} -c "mkdir -p /home/{user_name}/.aws"
+
+        sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
 
 
-        apt-get install -y libfreetype6-dev
-        pip install scikit-image
+        sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
+        sudo su {user_name} -c "git reset --hard {sha1}"
+        sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
+        sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
+        sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
 
-        apt-get install -y daemontools
-
-        sudo su ubuntu -c "mkdir -p /home/ubuntu/.aws"
-
-        sudo su ubuntu -c "aws s3 sync s3://dqn-setup /home/ubuntu/dqn-setup"
-
-
-        sudo su ubuntu -c "git clone https://github.com/maciejjaskowski/deep-q-learning.git"
-        sudo su ubuntu -c "git reset --hard {sha1}"
-        sudo su ubuntu -c "mkdir -p /home/ubuntu/deep-q-learning/weights"
-        sudo su ubuntu -c "mkdir -p /home/ubuntu/deep-q-learning/logs"
-        sudo su ubuntu -c "cp /home/ubuntu/dqn-setup/space_invaders.bin /home/ubuntu/deep-q-learning/"
-
-        sudo su ubuntu -c "aws s3 sync s3://{exp_name}/weights /home/ubuntu/deep-q-learning/weights"
+        sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
 
         aws s3 mb s3://{exp_name}
 
-        watch -n 60 "sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/weights s3://{exp_name}/weights' && sudo su ubuntu -c 'aws s3 sync /home/ubuntu/deep-q-learning/logs s3://{exp_name}/logs' && echo `date` >> /home/ubuntu/last_sync"
 
-        python ex1.py 2> log.err | multilog t s4000000 ./logs
-        """.format(**{"exp_name": exp_name, "sha1": "cb2a37e"})
 
-    print(user_data("dqn2"))
+        export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:; export LD_LIBRARY_PATH=/usr/local/cuda/lib64;  echo $PATH > /home/ubuntu/path.log; echo $LD_LIBRARY_PATH /home/ubuntu/ld.log; cd /home/{user_name}/{project_name} && THEANO_FLAGS='floatX=float32,[mode]=FAST_RUN,fastmath=True,root=/usr/local/cuda,device=gpu,lib.cnmem=0.9' python ex1.py 2> log.err | multilog t s4000000 ./logs
+
+        watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo `date` >> /home/{user_name}/last_sync"
+        """.format(**kargs)
+
+    ud = user_data(exp_name="dqn2", sha1="8031e777", user_name="ubuntu", project_name="deep-q-learning")
+    print(ud)
 
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
-                                        SpotPrice='0.251',
+                                        SpotPrice='0.29',
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
                                         Type='persistent',
                                         LaunchSpecification={
-                                            'ImageId': 'ami-315a675b',
+                                            'ImageId': 'ami-bdd2efd7',
                                             'KeyName': 'gpu-east',
                                             'InstanceType': 'g2.2xlarge',
                                             'Placement': {
@@ -85,7 +78,7 @@ def provision(client_token, availability_zone):
                                             'Monitoring': {
                                                 'Enabled': True
                                             },
-                                            'UserData': base64.b64encode(user_data("dqn2").encode("ascii")).decode('ascii'),
+                                            'UserData': base64.b64encode(ud.encode("ascii")).decode('ascii'),
                                             'SecurityGroupIds': ['sg-ab1236d2'],
 
                                         })
