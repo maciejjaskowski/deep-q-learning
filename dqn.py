@@ -177,7 +177,6 @@ class DQNAlgo:
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
-        self.ignore_feedback = False
         self.alpha = 0.00025
         # update frequency ?
         # gradient momentum ? 0.95
@@ -254,7 +253,8 @@ class DQNAlgo:
 
     def init_state(self, state):
         self.state = self._prep_state(state)
-        self.replay_memory.init_state(self.state)
+        if self.replay_memory:
+            self.replay_memory.init_state(self.state)
 
     def _update_network_stale(self):
         print("Updating stale network.")
@@ -298,8 +298,9 @@ class DQNAlgo:
             surprise = (r0_clipped + self.gamma * expectation) - self.last_q
             self.mood_q.put({'surprise': surprise, "expectations": expectation})
 
-        if self.ignore_feedback:
+        if not self.replay_memory:
             return
+
         self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
 
         if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
@@ -341,7 +342,7 @@ class DQNAlgo:
         self.mood_q = {self.mood_q}
         self.last_q = {self.last_q}
         self.n_parameter_updates = {self.n_parameter_updates}
-        self.ignore_feedback = {self.ignore_feedback}
+        self.replay_memory = {self.replay_memory}
         self.alpha = {self.alpha}
         self.save_every_n_frames = {self.save_every_n_frames}
         self.final_exploration_frame = {self.final_exploration_frame}

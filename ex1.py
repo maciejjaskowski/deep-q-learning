@@ -15,84 +15,63 @@ def latest(dir='.'):
         return dir + '/weights_' + str(max(frames)) + '.npz', max(frames)
 
 
-initial_weights_file, initial_i_frame = latest("weights")
-theano_verbose = False
-replay_memory_size = 500000
-visualize = False
+def main(**kargs):
+    initial_weights_file, initial_i_frame = latest(kargs['weights_dir'])
+
+    print("Continuing using weights from file: ", initial_weights_file, "from", initial_i_frame)
+
+    if kargs['theano_verbose']:
+        theano.config.compute_test_value = 'warn'
+        theano.config.exception_verbosity = 'high'
+        theano.config.optimizer = 'fast_compile'
+
+    ale = ag.init(display_screen=(kargs['visualize'] == 'ale'))
+    game = ag.SpaceInvadersGame(ale)
 
 
-print("Using weights from file: ", initial_weights_file)
+    def new_game():
+        game.ale.reset_game()
+        game.finished = False
+        game.cum_reward = 0
+        game.lives = 4
+        return game
 
-if theano_verbose:
-    theano.config.compute_test_value = 'warn'
-    theano.config.exception_verbosity = 'high'
-    theano.config.optimizer = 'fast_compile'
+    replay_memory = dqn.ReplayMemory(size=kargs['replay_memory_size']) if not kargs['dqn.no_replay'] else None
+    dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
+                           build_cnn=kargs['dqn.network'])
 
-ale = ag.init(display_screen=(visualize == 'ale'))
-game = ag.SpaceInvadersGame(ale)
-
-
-def new_game():
-    game.ale.reset_game()
-    game.finished = False
-    game.cum_reward = 0
-    game.lives = 4
-    return game
-
-#replay_memory = dqn.ReplayMemory(size=100, grace=10)
-replay_memory = dqn.ReplayMemory(size=replay_memory_size)
-dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
-                       build_cnn=dqn.build_cnn_gpu)
-
-if initial_weights_file:
-    dqn_algo.replay_start_size = 250000
-    dqn_algo.epsilon = 0.1
-    dqn_algo.final_epsilon = 0.1
-    dqn_algo.initial_epsilon = 0.1
+    dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
+    dqn_algo.epsilon = kargs['dqn.epsilon']
+    dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
+    dqn_algo.initial_epsilon = kargs['dqn.initial_epsilon']
     dqn_algo.i_frames = initial_i_frame
 
-dqn_algo.log_frequency=1
-
-# dqn_algo.target_network_update_frequency = 50
-# dqn_algo.replay_memory_size = 100
-# dqn_algo.replay_start_size = 75
-# dqn_algo.epsilon = 0.1
-# dqn_algo.initial_epsilon = 0.1
-# dqn_algo.final_epsilon = 0.1
-# dqn_algo.log_frequency = 10
-# visualize = True
-# dqn_algo.ignore_feedback = ignore_feedback
+    dqn_algo.log_frequency=kargs['dqn.log_frequency']
 
 
-# dqn_algo.epsilon = 0.1
-# dqn_algo.initial_epsilon = 0.1
-# dqn_algo.final_epsilon = 0.1
-# dqn_algo.ignore_feedback = True
-# dqn_algo.log_frequency = 0
-#
-# import Queue
-# dqn_algo.mood_q = Queue.Queue() if show_mood else None
-#
-# if show_mood:
-#     plot = Plot()
-#
-#     def worker():
-#         while True:
-#             item = dqn_algo.mood_q.get()
-#             plot.show(item)
-#             dqn_algo.mood_q.task_done()
-#
-#     import threading
-#     t = threading.Thread(target=worker)
-#     t.daemon = True
-#     t.start()
+    import Queue
+    dqn_algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
 
-print(str(dqn_algo))
+    if kargs['show_mood']:
+        plot = Plot()
 
-visualizer = ag.SpaceInvadersGameCombined2Visualizer() if visualize == 'q' else q.GameNoVisualizer()
-teacher = q.Teacher(new_game, dqn_algo, visualizer,
-                    ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
-teacher.teach(500000)
+        def worker():
+            while True:
+                item = dqn_algo.mood_q.get()
+                plot.show(item)
+                dqn_algo.mood_q.task_done()
+
+        import threading
+        t = threading.Thread(target=worker)
+        t.daemon = True
+    t.start()
+
+    print(str(dqn_algo))
+
+    visualizer = ag.SpaceInvadersGameCombined2Visualizer() if kargs['visualize'] == 'q' else q.GameNoVisualizer()
+    teacher = q.Teacher(new_game, dqn_algo, visualizer,
+                        ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
+    teacher.teach(500000)
 
 
 class Plot(object):
@@ -174,8 +153,102 @@ def const_on_space_invaders():
                         ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)
 
+if __name__ == "__main__":
+    import sys
+    import getopt
+    optlist, args = getopt.getopt(sys.argv[1:], '', [
+        'visualize=',
+        'dqn.replay_start_size=',
+        'dqn.final_epsilon=',
+        'dqn.initial_epsilon=',
+        'dqn.log_frequency=',
+        'replay_memory_size=',
+        'theano_verbose=',
+        'weights_dir=',
+        'show_mood',
+        'dqn.no_replay',
+        'dqn.network='])
+
+    d = {
+        'visualize': False,
+        'weights_dir': 'weights',
+        'theano_verbose': False,
+        'show_mood': False,
+        'dqn.replay_start_size': 50000,
+        'dqn.initial_epsilon': 1,
+        'dqn.final_epsilon': 0.1,
+        'dqn.log_frequency': 1,
+        'dqn.replay_memory_size': 500000,
+        'dqn.no_replay': False,
+        'dqn.network': dqn.build_cnn
+         }
+    for o, a in optlist:
+        if o in ("--visualize"):
+            d['visualize'] = a
+        elif o in ("--weights_dir"):
+            d['weights_dir'] = a
+        elif o in ("--dqn.replay_start_size"):
+            d["replay_start_size"] = int(a)
+        elif o in ("--dqn.final_epsilon"):
+            d["dqn.final_epsilon"] = float(a)
+        elif o in ("--dqn.initial_epsilon"):
+            d["dqn.initial_epsilon"] = float(a)
+            d["dqn.epsilon"] = float(a)
+        elif o in ("--dqn.log_frequency"):
+            d["dqn.log_frequency"] = int(a)
+        elif o in ("--replay_memory_size"):
+            d["replay_memory_size"] = int(a)
+        elif o in ("--theano_verbose"):
+            d["theano_verbose"] = bool(a)
+        elif o in ("--show_mood"):
+            d["show_mood"] = True
+        elif o in ("--dqn.no_replay"):
+            d["dqn.no_replay"] = True
+        elif o in ("--network"):
+            if a == 'cnn':
+                d["dqn.network"] = dqn.build_cnn
+            elif a == 'cnn_gpu':
+                d["dqn.network"] = dqn.build_cnn_gpu
+        else:
+            assert False, "unhandled option"
+
+    import pprint
+    pp = pprint.PrettyPrinter(depth=2)
+    print(optlist)
+    print(args)
+    print(sys.argv)
+    print("")
+    pp.pprint(d)
+
+    main(**d)
 
 
+    #replay_memory = dqn.ReplayMemory(size=100, grace=10)
+    # dqn_algo.replay_start_size = 250000
+    # dqn_algo.epsilon = 0.1
+    # dqn_algo.final_epsilon = 0.1
+    # dqn_algo.initial_epsilon = 0.1
+    # dqn_algo.i_frames = initial_i_frame
+    #
+    # dqn_algo.log_frequency=1
+
+
+    # dqn_algo.target_network_update_frequency = 50
+    # dqn_algo.replay_memory_size = 100
+    # dqn_algo.replay_start_size = 75
+    # dqn_algo.epsilon = 0.1
+    # dqn_algo.initial_epsilon = 0.1
+    # dqn_algo.final_epsilon = 0.1
+    # dqn_algo.log_frequency = 10
+    # visualize = True
+    # dqn_algo.ignore_feedback = ignore_feedback
+
+
+    # dqn_algo.epsilon = 0.1
+    # dqn_algo.initial_epsilon = 0.1
+    # dqn_algo.final_epsilon = 0.1
+    # dqn_algo.ignore_feedback = True
+    # dqn_algo.log_frequency = 0
 
 
 #dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
@@ -195,3 +268,5 @@ def const_on_space_invaders():
 #results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/weights_800100.npz')
 
 #pickle.dump(results, open("results_900000_new.pickled", "wb"))
+
+
