@@ -1,3 +1,6 @@
 #!/bin/bash
-INSTANCE=`cat ../provision/instance.dns`
-scp -i ~/.ssh/gpu-east.pem ubuntu@$INSTANCE:/home/ubuntu/dqn/deep-q-learning/log.out .
+set -e
+set -u
+echo "Syncing s3://$1/logs with $1/logs."
+
+aws s3 sync s3://$1/logs $1/logs
