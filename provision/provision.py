@@ -17,8 +17,9 @@ def prices():
     return zip(_prices('us-east-1a'), _prices('us-east-1b'), _prices('us-east-1c'), _prices('us-east-1e'))
 
 
-def user_data(**kargs):
-        return """#!/bin/bash
+def upload_user_data(**kargs):
+
+    script = """#!/bin/bash
         cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
         cd /home/{user_name}
@@ -36,17 +37,28 @@ def user_data(**kargs):
 
         sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
 
-        aws s3 mb s3://{exp_name}
-
-
 
         export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:; export LD_LIBRARY_PATH=/usr/local/cuda/lib64;  echo $PATH > /home/{user_name}/path.log; echo $LD_LIBRARY_PATH /home/{user_name}/ld.log; cd /home/{user_name}/{project_name} && THEANO_FLAGS='floatX=float32,mode=FAST_RUN,nvcc.fastmath=True,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=cnn_gpu 2> log.err | multilog t s4000000 ./logs &
 
         watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo `date` >> /home/{user_name}/last_sync" &
         """.format(**kargs)
 
+    s3 = boto3.client('s3')
 
-def provision(client_token, user_data, availability_zone, spot_price):
+    s3.create_bucket(ACL='private', Bucket=kargs['exp_name'])
+
+    k = s3.Object(kargs['exp_name'], 'run.sh')
+    k.put(Body=base64.b64encode(script.encode("ascii")))
+
+    return script
+
+
+def provision(client_token, availability_zone, spot_price):
+
+    user_data = """#!/bin/bash
+      sudo su {user_name} -c "aws s3 sync s3://{exp_name}/run.sh /home/{user_name}/run.sh"
+      /home/{user_name}/run.sh
+    """
 
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
@@ -142,7 +154,7 @@ def main():
     spot_price = '0.01'
 
     client_token = sys.argv[1]
-    user_script = user_data(exp_name=client_token, sha1=sha1, user_name="ubuntu", project_name=project_name)
+    user_script = upload_user_data(exp_name=client_token, sha1=sha1, user_name="ubuntu", project_name=project_name)
 
     print """
     project_name: {project_name}
@@ -161,7 +173,7 @@ def main():
                spot_price=spot_price, availability_zone=availability_zone)
 
     instance = provision(client_token=client_token, availability_zone=availability_zone,
-                         spot_price=spot_price, user_data=user_script)
+                         spot_price=spot_price)
 
     print(instance)
     print("public_dns_name: ", instance['public_dns_name'])
