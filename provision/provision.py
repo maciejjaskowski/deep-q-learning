@@ -20,35 +20,35 @@ def prices():
 def upload_user_data(**kargs):
 
     script = """#!/bin/bash
-        cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
+cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
 
-        cd /home/{user_name}
+cd /home/{user_name}
 
-        sudo su {user_name} -c "mkdir -p /home/{user_name}/.aws"
+sudo su {user_name} -c "mkdir -p /home/{user_name}/.aws"
 
-        sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
-
-
-        sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
-        sudo su {user_name} -c "git reset --hard {sha1}"
-        sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
-        sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
-        sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
-
-        sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
+sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
 
 
-        export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:; export LD_LIBRARY_PATH=/usr/local/cuda/lib64;  echo $PATH > /home/{user_name}/path.log; echo $LD_LIBRARY_PATH /home/{user_name}/ld.log; cd /home/{user_name}/{project_name} && THEANO_FLAGS='floatX=float32,mode=FAST_RUN,nvcc.fastmath=True,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=cnn_gpu 2> log.err | multilog t s4000000 ./logs &
+sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
+sudo su {user_name} -c "git reset --hard {sha1}"
+sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
+sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
+sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
 
-        watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo `date` >> /home/{user_name}/last_sync" &
+sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
+
+
+export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:; export LD_LIBRARY_PATH=/usr/local/cuda/lib64;  echo $PATH > /home/{user_name}/path.log; echo $LD_LIBRARY_PATH /home/{user_name}/ld.log; cd /home/{user_name}/{project_name} && THEANO_FLAGS='floatX=float32,mode=FAST_RUN,nvcc.fastmath=True,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=cnn_gpu 2> log.err | multilog t s4000000 ./logs &
+
+watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo `date` >> /home/{user_name}/last_sync" &
         """.format(**kargs)
 
-    s3 = boto3.client('s3')
+    s3 = boto3.resource('s3')
 
     s3.create_bucket(ACL='private', Bucket=kargs['exp_name'])
 
     k = s3.Object(kargs['exp_name'], 'run.sh')
-    k.put(Body=base64.b64encode(script.encode("ascii")))
+    k.put(Body=script)
 
     return script
 
@@ -148,15 +148,17 @@ def provision(client_token, availability_zone, spot_price):
 def main():
 
     project_name = "deep-q-learning"
-    sha1 = "8031e777"
+    from subprocess import Popen,PIPE
+    process = Popen(["git", "rev-parse", "HEAD"], shell=False, stdout=PIPE)
+    sha1,_ = process.communicate()
 
     availability_zone = 'us-east-1a'
-    spot_price = '0.01'
+    spot_price = '0.22'
 
     client_token = sys.argv[1]
     user_script = upload_user_data(exp_name=client_token, sha1=sha1, user_name="ubuntu", project_name=project_name)
 
-    print """
+    print("""
     project_name: {project_name}
     sha1: {sha1}
 
@@ -167,10 +169,9 @@ def main():
     user_script:
 
     {user_script}
-
     """.format(project_name=project_name, sha1=sha1,
                client_token=client_token, user_script=user_script,
-               spot_price=spot_price, availability_zone=availability_zone)
+               spot_price=spot_price, availability_zone=availability_zone))
 
     instance = provision(client_token=client_token, availability_zone=availability_zone,
                          spot_price=spot_price)
