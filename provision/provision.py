@@ -56,10 +56,12 @@ watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name
 def provision(client_token, availability_zone, spot_price):
 
     user_data = """#!/bin/bash
-      aws s3 sync s3://{exp_name}/config .
-      chmod a+x run.sh
-      ./run.sh > log.out 2> log.err
+      aws s3 sync s3://{exp_name}/config /home/ubuntu/
+      chmod a+x /home/ubuntu/run.sh
+      /home/ubuntu/run.sh > /home/ubuntu/run_log.out 2> /home/ubuntu/run_log.err
     """.format(exp_name=client_token)
+
+    print(user_data)
 
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
@@ -148,17 +150,14 @@ def provision(client_token, availability_zone, spot_price):
 #             break
 
 
-def main():
+def main(availability_zone, spot_price, client_token):
 
     project_name = "deep-q-learning"
     from subprocess import Popen,PIPE
     process = Popen(["git", "rev-parse", "HEAD"], shell=False, stdout=PIPE)
-    sha1,_ = process.communicate()
+    sha1, _ = process.communicate(str.encode("utf-8"))
+    sha1 = sha1[:-1]
 
-    availability_zone = 'us-east-1a'
-    spot_price = '0.18'
-
-    client_token = sys.argv[1]
     user_script = upload_user_data(exp_name=client_token, sha1=sha1, user_name="ubuntu", project_name=project_name)
 
     print("""
@@ -186,7 +185,23 @@ def main():
         f.write(str(instance['public_dns_name']))
 
 if __name__ == "__main__":
-    main()
+    import sys
+    import getopt
+    optlist, args = getopt.getopt(sys.argv[1:], '', [
+        'price=',
+        'client_token='
+        ])
+
+    d = {'availability_zone': 'us-east-1a'}
+    for o, a in optlist:
+        if o in ("--price",):
+            d['spot_price'] = a
+        elif o in ("--client_token",):
+            d['client_token'] = a
+        else:
+            assert False, "unhandled option"
+
+    main(**d)
 
 
 
