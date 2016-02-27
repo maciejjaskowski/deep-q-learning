@@ -195,7 +195,7 @@ class DQNAlgo:
         self.gamma = 0.99
         self.replay_memory = replay_memory
 
-        self.log_frequency = 50
+        self.log_frequency = 1
 
         self.minibatch_size = 32
         # self.replay_memory_size = 1000000
@@ -248,7 +248,7 @@ class DQNAlgo:
 
     def log(self, *args):
         import datetime
-        if self.i_frames % 100 < self.log_frequency:
+        if self.i_frames % 1000 < self.log_frequency:
             print(str(datetime.datetime.now()), *args)
 
     def init_state(self, state):
