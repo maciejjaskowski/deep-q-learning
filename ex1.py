@@ -207,7 +207,7 @@ if __name__ == "__main__":
             d["show_mood"] = True
         elif o in ("--dqn.no_replay"):
             d["dqn.no_replay"] = True
-        elif o in ("--network"):
+        elif o in ("--dqn.network"):
             if a == 'cnn':
                 d["dqn.network"] = dqn.build_cnn
             elif a == 'cnn_gpu':
