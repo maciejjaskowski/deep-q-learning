@@ -6,6 +6,8 @@ import theano
 
 
 def latest(dir='.'):
+    if dir == None:
+        return None, 0
     import os, re
     frames = [int(re.match(r"weights_([0-9]*).npz", file).groups()[0])
              for file in os.listdir(dir) if file.startswith("weights_")]
@@ -36,12 +38,11 @@ def main(**kargs):
         game.lives = 4
         return game
 
-    replay_memory = dqn.ReplayMemory(size=kargs['replay_memory_size']) if not kargs['dqn.no_replay'] else None
+    replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
     dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
                            build_cnn=kargs['dqn.network'])
 
     dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
-    dqn_algo.epsilon = kargs['dqn.epsilon']
     dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
     dqn_algo.initial_epsilon = kargs['dqn.initial_epsilon']
     dqn_algo.i_frames = initial_i_frame
@@ -64,7 +65,7 @@ def main(**kargs):
         import threading
         t = threading.Thread(target=worker)
         t.daemon = True
-    t.start()
+        t.start()
 
     print(str(dqn_algo))
 
@@ -153,6 +154,20 @@ def const_on_space_invaders():
                         ag.Phi(skip_every=6), repeat_action=6)
     teacher.teach(1)
 
+d = {
+    'visualize': False,
+    'weights_dir': 'weights',
+    'theano_verbose': False,
+    'show_mood': False,
+    'dqn.replay_start_size': 50000,
+    'dqn.initial_epsilon': 1,
+    'dqn.final_epsilon': 0.1,
+    'dqn.log_frequency': 1,
+    'dqn.replay_memory_size': 500000,
+    'dqn.no_replay': False,
+    'dqn.network': dqn.build_cnn
+     }
+
 if __name__ == "__main__":
     import sys
     import getopt
@@ -169,19 +184,7 @@ if __name__ == "__main__":
         'dqn.no_replay',
         'dqn.network='])
 
-    d = {
-        'visualize': False,
-        'weights_dir': 'weights',
-        'theano_verbose': False,
-        'show_mood': False,
-        'dqn.replay_start_size': 50000,
-        'dqn.initial_epsilon': 1,
-        'dqn.final_epsilon': 0.1,
-        'dqn.log_frequency': 1,
-        'dqn.replay_memory_size': 500000,
-        'dqn.no_replay': False,
-        'dqn.network': dqn.build_cnn
-         }
+
     for o, a in optlist:
         if o in ("--visualize"):
             d['visualize'] = a
@@ -221,52 +224,4 @@ if __name__ == "__main__":
     pp.pprint(d)
 
     main(**d)
-
-
-    #replay_memory = dqn.ReplayMemory(size=100, grace=10)
-    # dqn_algo.replay_start_size = 250000
-    # dqn_algo.epsilon = 0.1
-    # dqn_algo.final_epsilon = 0.1
-    # dqn_algo.initial_epsilon = 0.1
-    # dqn_algo.i_frames = initial_i_frame
-    #
-    # dqn_algo.log_frequency=1
-
-
-    # dqn_algo.target_network_update_frequency = 50
-    # dqn_algo.replay_memory_size = 100
-    # dqn_algo.replay_start_size = 75
-    # dqn_algo.epsilon = 0.1
-    # dqn_algo.initial_epsilon = 0.1
-    # dqn_algo.final_epsilon = 0.1
-    # dqn_algo.log_frequency = 10
-    # visualize = True
-    # dqn_algo.ignore_feedback = ignore_feedback
-
-
-    # dqn_algo.epsilon = 0.1
-    # dqn_algo.initial_epsilon = 0.1
-    # dqn_algo.final_epsilon = 0.1
-    # dqn_algo.ignore_feedback = True
-    # dqn_algo.log_frequency = 0
-
-
-#dqn_on_space_invaders(visualize=visualize, initial_weights_file=initial_weights_file)
-#dqn_on_space_invaders(visualize=True, initial_weights_file='weights_2400100.npz', ignore_feedback=True)
-
-
-#dqn_on_space_invaders_gpu(visualize=False, initial_weights_file=latest('.')[0], initial_i_frame=latest('.')[1])
-
-#results = dqn_on_space_invaders_play(visualize=None, initial_weights_file='analysis/sth_working_900000.npz', show_mood=False)
-
-
-#results = dqn_on_space_invaders_cpu(visualize=None, initial_weights_file=None)
-#results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file=latest('analysis')[0], show_mood=True)
-#results = dqn_on_space_invaders_play(visualize='q', initial_weights_file=None, show_mood=True)
-#results = dqn_on_space_invaders_play(visualize='ale', initial_weights_file='analysis/weights_800100.npz', show_mood=True)
-#results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/weights_1000100.npz')
-#results = dqn_on_space_invaders_play(visualize='q', initial_weights_file='analysis/weights_800100.npz')
-
-#pickle.dump(results, open("results_900000_new.pickled", "wb"))
-
 

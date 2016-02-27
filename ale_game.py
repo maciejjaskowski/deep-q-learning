@@ -97,11 +97,16 @@ class SpaceInvadersGameCombined2Visualizer:
     def __init__(self):
         import pygame
         self.screen = pygame.display.set_mode((160, 640))
+        self.mem = {}
 
     def show(self, prev_frames):
         import pygame
-        #l = lambda x: gray_scale_lookup[x]
-        l = lambda x: ARR[x]
+
+        def l(x):
+            if x not in self.mem:
+                self.mem[x] = (x, x, x)
+            return self.mem[x]
+
         f_l = np.frompyfunc(l, 1, 3)
         rect = pygame.Surface((160, 640))
 
@@ -131,7 +136,7 @@ class SpaceInvadersGame(object):
         self.ale = ale
         self.finished = False
         self.cum_reward = 0
-        self.state = ale.getScreen()
+        self.state = np.mean(ale.getScreenRGB(), axis=2)
         self.action_set = self.ale.getMinimalActionSet()
         self.lives = 4
 
@@ -144,7 +149,7 @@ class SpaceInvadersGame(object):
             self.finished = True
             self.ale.reset_game()
 
-        self.state = self.ale.getScreen()
+        self.state = np.mean(self.ale.getScreenRGB(), axis=2)
         if self.lives != self.ale.lives():
             self.lives = self.ale.lives()
             return 40
