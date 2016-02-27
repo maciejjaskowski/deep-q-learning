@@ -47,7 +47,7 @@ watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name
 
     s3.create_bucket(ACL='private', Bucket=kargs['exp_name'])
 
-    k = s3.Object(kargs['exp_name'], 'run.sh')
+    k = s3.Object(kargs['exp_name'], 'config/run.sh')
     k.put(Body=script)
 
     return script
@@ -56,9 +56,10 @@ watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name
 def provision(client_token, availability_zone, spot_price):
 
     user_data = """#!/bin/bash
-      sudo su {user_name} -c "aws s3 sync s3://{exp_name}/run.sh /home/{user_name}/run.sh"
-      /home/{user_name}/run.sh
-    """
+      aws s3 sync s3://{exp_name}/config .
+      chmod a+x run.sh
+      ./run.sh > log.out 2> log.err
+    """.format(exp_name=client_token)
 
     result = ec2.request_spot_instances(DryRun=False,
                                         ClientToken=client_token,
@@ -111,9 +112,11 @@ def provision(client_token, availability_zone, spot_price):
                 'instance': instance
             }
 
-        if 'InstanceId' in instance.keys() and public_dns_name != '':
+        if 'InstanceId' in instance.keys():
             instance_description = ec2.describe_instances(InstanceIds=[instance['InstanceId']])
             public_dns_name = instance_description['Reservations'][0]['Instances'][0]['PublicDnsName']
+
+        if public_dns_name != '':
             break
 
         time.sleep(1)
@@ -153,7 +156,7 @@ def main():
     sha1,_ = process.communicate()
 
     availability_zone = 'us-east-1a'
-    spot_price = '0.22'
+    spot_price = '0.18'
 
     client_token = sys.argv[1]
     user_script = upload_user_data(exp_name=client_token, sha1=sha1, user_name="ubuntu", project_name=project_name)
