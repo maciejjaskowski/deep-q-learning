@@ -253,7 +253,7 @@ class DQNAlgo:
 
     def init_state(self, state):
         self.state = self._prep_state(state)
-        if self.replay_memory:
+        if self.replay_memory is not None:
             self.replay_memory.init_state(self.state)
 
     def _update_network_stale(self):
@@ -298,7 +298,7 @@ class DQNAlgo:
             surprise = (r0_clipped + self.gamma * expectation) - self.last_q
             self.mood_q.put({'surprise': surprise, "expectations": expectation})
 
-        if not self.replay_memory:
+        if self.replay_memory is None:
             return
 
         self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
@@ -330,7 +330,7 @@ class DQNAlgo:
                 self._update_network_stale()
 
         if self.i_frames % 10000 == 100:
-            self.log("Processed frames: ", self.i_frames)
+            print("Processed frames: ", self.i_frames)
 
         if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
             filename = 'weights/weights_' + str(self.i_frames) + '.npz'

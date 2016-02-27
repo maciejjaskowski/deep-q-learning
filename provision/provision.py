@@ -38,9 +38,14 @@ sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/
 sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
 
 
-export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:; export LD_LIBRARY_PATH=/usr/local/cuda/lib64;  echo $PATH > /home/{user_name}/path.log; echo $LD_LIBRARY_PATH /home/{user_name}/ld.log; cd /home/{user_name}/{project_name} && THEANO_FLAGS='floatX=float32,mode=FAST_RUN,nvcc.fastmath=True,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=cnn_gpu 2> log.err | multilog t s4000000 ./logs &
+export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:;
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64;
+echo $PATH > /home/{user_name}/path.log;
+echo $LD_LIBRARY_PATH /home/{user_name}/ld.log;
+cd /home/{user_name}/{project_name}
+THEANO_FLAGS='floatX=float32,mode=FAST_RUN,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=cnn_gpu 2> log.err | multilog t s4000000 ./logs &
 
-watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo `date` >> /home/{user_name}/last_sync" &
+watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo \`date\` >> /home/{user_name}/last_sync" &
         """.format(**kargs)
 
     s3 = boto3.resource('s3')

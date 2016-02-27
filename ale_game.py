@@ -136,7 +136,7 @@ class SpaceInvadersGame(object):
         self.ale = ale
         self.finished = False
         self.cum_reward = 0
-        self.state = np.mean(ale.getScreenRGB(), axis=2)
+        self.state = np.mean(ale.getScreenRGB(), axis=2, dtype=np.uint8)
         self.action_set = self.ale.getMinimalActionSet()
         self.lives = 4
 
@@ -149,7 +149,7 @@ class SpaceInvadersGame(object):
             self.finished = True
             self.ale.reset_game()
 
-        self.state = np.mean(self.ale.getScreenRGB(), axis=2)
+        self.state = np.mean(self.ale.getScreenRGB(), axis=2, dtype=np.uint8)
         if self.lives != self.ale.lives():
             self.lives = self.ale.lives()
             return 40
