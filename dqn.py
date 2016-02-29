@@ -103,7 +103,7 @@ def build_nature_cnn(n_actions, input_var=None):
 
 def build_nips_cnn_gpu(n_actions, input_var):
 
-    network = lasagne.layers.InputLayer(shape=(None, 4, 84, 84),
+    network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),
                                         input_var=input_var)
 
     network = dnn.Conv2DDNNLayer(
@@ -122,7 +122,10 @@ def build_nips_cnn_gpu(n_actions, input_var):
 
     network = lasagne.layers.DenseLayer(
         network,
-        num_units=n_actions)
+        num_units=n_actions,
+        nonlinearity=None,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1))
 
     return network
 
@@ -323,8 +326,9 @@ class DQNAlgo:
         if self.replay_memory is None:
             return
 
-        print("{i_frame} | reward: {reward} | creward: {clipped_reward}"
-              .format(i_frame=self.i_frames, reward=exp.r0, creward=r0_clipped))
+        if exp.r0 != 0 or r0_clipped != 0:
+            print("{i_frame} | reward: {reward} | creward: {creward}"
+                  .format(i_frame=self.i_frames, reward=exp.r0, creward=r0_clipped))
 
         self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
 

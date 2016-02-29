@@ -64,7 +64,7 @@ watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name
 
     call(["aws", "s3", "sync", "../analysis", "s3://" + kargs['exp_name'] + "/analysis"])
     call(["mkdir", "-p", "../" + kargs['exp_name']])
-    call(["cp", "sync.sh", "../" + kargs['exp_name']])
+    call(["cp", "../analysis/sync.sh", "../" + kargs['exp_name']])
 
     return script
 
