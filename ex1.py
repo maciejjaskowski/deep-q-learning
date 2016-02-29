@@ -165,7 +165,7 @@ d = {
     'dqn.log_frequency': 1,
     'dqn.replay_memory_size': 500000,
     'dqn.no_replay': False,
-    'dqn.network': dqn.build_cnn
+    'dqn.network': dqn.build_nips_cnn_gpu
      }
 
 if __name__ == "__main__":
@@ -186,32 +186,34 @@ if __name__ == "__main__":
 
 
     for o, a in optlist:
-        if o in ("--visualize"):
+        if o in ("--visualize",):
             d['visualize'] = a
-        elif o in ("--weights_dir"):
+        elif o in ("--weights_dir",):
             d['weights_dir'] = a
-        elif o in ("--dqn.replay_start_size"):
+        elif o in ("--dqn.replay_start_size",):
             d["replay_start_size"] = int(a)
-        elif o in ("--dqn.final_epsilon"):
+        elif o in ("--dqn.final_epsilon",):
             d["dqn.final_epsilon"] = float(a)
-        elif o in ("--dqn.initial_epsilon"):
+        elif o in ("--dqn.initial_epsilon",):
             d["dqn.initial_epsilon"] = float(a)
             d["dqn.epsilon"] = float(a)
-        elif o in ("--dqn.log_frequency"):
+        elif o in ("--dqn.log_frequency",):
             d["dqn.log_frequency"] = int(a)
-        elif o in ("--replay_memory_size"):
+        elif o in ("--replay_memory_size",):
             d["replay_memory_size"] = int(a)
-        elif o in ("--theano_verbose"):
+        elif o in ("--theano_verbose",):
             d["theano_verbose"] = bool(a)
-        elif o in ("--show_mood"):
+        elif o in ("--show_mood",):
             d["show_mood"] = True
-        elif o in ("--dqn.no_replay"):
+        elif o in ("--dqn.no_replay",):
             d["dqn.no_replay"] = True
-        elif o in ("--dqn.network"):
+        elif o in ("--dqn.network",):
             if a == 'cnn':
-                d["dqn.network"] = dqn.build_cnn
+                d["dqn.network"] = dqn.build_nature_cnn
             elif a == 'cnn_gpu':
-                d["dqn.network"] = dqn.build_cnn_gpu
+                d["dqn.network"] = dqn.build_nature_cnn_gpu
+            elif a == 'nips_cnn_gpu':
+                d["dqn.network"] = dqn.build_nips_cnn_gpu
         else:
             assert False, "unhandled option"
 

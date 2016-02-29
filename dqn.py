@@ -8,10 +8,10 @@ import theano
 import theano.tensor as T
 
 import lasagne
+from lasagne.layers import dnn
 
+def build_nature_cnn_gpu(n_actions, input_var):
 
-def build_cnn_gpu(n_actions, input_var):
-    from lasagne.layers import dnn
 
     l_in = lasagne.layers.InputLayer(
         shape=(32, 4, 80, 80),
@@ -67,11 +67,9 @@ def build_cnn_gpu(n_actions, input_var):
     return l_out
 
 
-def build_cnn(n_actions, input_var=None):
+def build_nature_cnn(n_actions, input_var=None):
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)
-
-
 
     network = lasagne.layers.Conv2DLayer(
         network, num_filters=32, filter_size=(8, 8), stride=4,
@@ -99,6 +97,32 @@ def build_cnn(n_actions, input_var=None):
         network,
         num_units=n_actions,
         b=lasagne.init.Constant(.1))
+
+    return network
+
+
+def build_nips_cnn_gpu(n_actions, input_var):
+
+    network = lasagne.layers.InputLayer(shape=(None, 4, 84, 84),
+                                        input_var=input_var)
+
+    network = dnn.Conv2DDNNLayer(
+        network, num_filters=16, filter_size=(8, 8), stride=4,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.GlorotUniform())
+
+    network = dnn.Conv2DDNNLayer(
+        network, num_filters=32, filter_size=(4, 4), stride=2,
+        nonlinearity=lasagne.nonlinearities.rectify)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=256,
+        nonlinearity=lasagne.nonlinearities.rectify)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=n_actions)
 
     return network
 
@@ -171,7 +195,7 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn=build_cnn):
+    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn=build_nature_cnn):
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
