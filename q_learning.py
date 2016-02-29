@@ -87,8 +87,8 @@ class Teacher:
         while not game.finished and i_steps < n_steps:
             i_steps += 1
             exp, elapsed_time = self.single_step(game)
-            if i_steps % 1000 < 10:
-                print(elapsed_time)
+            if i_steps % 10000 < 10:
+                print("elapsed time: {elapsed_time}".format(elapsed_time=elapsed_time))
 
         if game.finished:
             print "Finished after ", i_steps, " steps"
@@ -96,6 +96,7 @@ class Teacher:
             print "Failure."
 
         print "Game reward: " + str(game.cum_reward)
+        print ""
 
         self.game_visualizer.next_game()
 

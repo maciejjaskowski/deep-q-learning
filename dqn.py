@@ -10,8 +10,6 @@ import theano.tensor as T
 import lasagne
 
 
-
-
 def build_cnn_gpu(n_actions, input_var):
     from lasagne.layers import dnn
 
@@ -247,9 +245,8 @@ class DQNAlgo:
                                        self.loss)
 
     def log(self, *args):
-        import datetime
-        if self.i_frames % 1000 < self.log_frequency:
-            print(str(datetime.datetime.now()), *args)
+        if self.i_frames % 10000 < self.log_frequency:
+            print(self.i_frames, *args)
 
     def init_state(self, state):
         self.state = self._prep_state(state)
@@ -257,7 +254,7 @@ class DQNAlgo:
             self.replay_memory.init_state(self.state)
 
     def _update_network_stale(self):
-        print("Updating stale network.")
+        print("{i_frame} | Updating stale network.".format(i_frame=self.i_frames))
         lasagne.layers.set_all_param_values(self.network_stale, lasagne.layers.get_all_param_values(self.network))
 
     @staticmethod
@@ -266,11 +263,12 @@ class DQNAlgo:
 
     def action(self):
         import random
+        self.log("{i_frame} | epsilon: {epsilon}".format(i_frame=self.i_frames, epsilon=self.epsilon))
         if self.i_frames < self.final_exploration_frame:
             if self.i_frames % 10000 == 50:
                 self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
                     self.i_frames / self.final_exploration_frame) + self.initial_epsilon
-                print("epsilon: ", self.epsilon)
+
         else:
             self.epsilon = self.final_epsilon
 
@@ -301,6 +299,9 @@ class DQNAlgo:
         if self.replay_memory is None:
             return
 
+        print("{i_frame} | reward: {reward} | creward: {clipped_reward}"
+              .format(i_frame=self.i_frames, reward=exp.r0, creward=r0_clipped))
+
         self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
 
         if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
@@ -320,21 +321,17 @@ class DQNAlgo:
 
             self.n_parameter_updates += 1
 
-            self.log('loss: ', t[0], t[1])
-
-            self.log('y, q: ', t[2], t[3])
-            self.log('out: ', t[4])
-            self.log('out_stale: ', t[5])
+            self.log('{i_frame} | loss: '.format(i_frame=self.i_frames), t[0], t[1])
+            self.log('{i_frame} | y, q: '.format(i_frame=self.i_frames), t[2], t[3])
+            self.log('{i_frame} | out: '.format(i_frame=self.i_frames), t[4])
+            self.log('{i_frame} | out_stale: '.format(i_frame=self.i_frames), t[5])
 
             if self.n_parameter_updates % self.target_network_update_frequency == 0:
                 self._update_network_stale()
 
-        if self.i_frames % 10000 == 100:
-            print("Processed frames: ", self.i_frames)
-
-        if self.i_frames % self.save_every_n_frames == 100:  # 30 processed frames / s
+        if self.i_frames % self.save_every_n_frames == 100:
             filename = 'weights/weights_' + str(self.i_frames) + '.npz'
-            print("File saved: ", filename)
+            print("{i_frame} | File saved: {filename}".format(i_frame=self.i_frames, filename=filename))
             np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
 
     def __str__(self):
