@@ -9,9 +9,15 @@ ec2 = boto3.client('ec2')
 
 
 def _prices(az):
-    a = ec2.describe_spot_price_history(StartTime=datetime(2016, 1, 1), InstanceTypes=['g2.2xlarge'],
-                                        AvailabilityZone=az, ProductDescriptions=['Linux/UNIX'])
-    return sorted(a['SpotPriceHistory'], key=lambda s: s['Timestamp'])
+    next_token = ''
+    a = []
+    for i in range(1):
+        res = ec2.describe_spot_price_history(StartTime=datetime(2016, 1, 1), InstanceTypes=['g2.2xlarge'],
+                                            AvailabilityZone=az, ProductDescriptions=['Linux/UNIX'], MaxResults=1000, NextToken=next_token)
+        a = a + res['SpotPriceHistory']
+        next_token = res['NextToken']
+
+    return sorted(a, key=lambda s: s['Timestamp'])
 
 
 def prices():
@@ -211,7 +217,47 @@ if __name__ == "__main__":
         else:
             assert False, "unhandled option"
 
+
+
     main(**d)
+
+
+def plot():
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    plt.ion()
+    fig, ax1 = plt.subplots()
+
+    x,y =zip(*[(p['Timestamp'], p['SpotPrice']) for p in _prices('us-east-1a')])
+    print(min(x))
+    print(max(x))
+    print(len(x))
+    sx = pd.Series(x)
+    delta = (sx - sx.shift(1))[1:]
+    conc = pd.concat([delta, pd.Series(np.array(y, dtype=np.float32))], axis=1)
+    conc.iloc[:, 1] = conc.iloc[:, 1].shift(1)
+
+    df = pd.DataFrame(np.array(y, dtype=np.float32))
+    bins = 25
+
+    def calc(c):
+        eligible = (pd.concat([df, df.shift(1)], axis=1) <= c)[1:]
+        raised = eligible.apply(lambda x: not x.iloc[0] and x.iloc[1], axis=1)
+        return len(np.where(raised)[0])
+
+    def calc_time(c):
+        return conc[conc.iloc[:, 1] < c].iloc[:, 0].sum().total_seconds() / 60 / 60
+
+    lin = np.linspace(df.min()[0], df.max()[0], bins)
+
+    print([calc_time(c) for c in lin])
+    ax1.plot(lin, [calc_time(c) for c in lin])
+
+    ax2 = ax1.twinx()
+
+    ax2.plot(lin, [calc(c) for c in lin], color='r')
+    ax2.set_ylabel('Liczba przerwan', color='r')
 
 
 
