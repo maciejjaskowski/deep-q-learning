@@ -3,6 +3,7 @@ import base64
 import time
 import sys
 from datetime import datetime
+from subprocess import call
 
 ec2 = boto3.client('ec2')
 
@@ -30,7 +31,7 @@ sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
 
 
 sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
-sudo su {user_name} -c "git reset --hard {sha1}"
+sudo su {user_name} -c "cd {project_name} && git reset --hard {sha1}"
 sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
 sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
 sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
@@ -54,6 +55,10 @@ watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name
 
     k = s3.Object(kargs['exp_name'], 'config/run.sh')
     k.put(Body=script)
+
+    call(["aws", "s3", "sync", "../analysis", "s3://" + kargs['exp_name'] + "/analysis"])
+    call(["mkdir", "-p", "../" + kargs['exp_name']])
+    call(["cp", "sync.sh", "../" + kargs['exp_name']])
 
     return script
 
