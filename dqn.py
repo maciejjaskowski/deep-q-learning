@@ -8,10 +8,10 @@ import theano
 import theano.tensor as T
 
 import lasagne
-from lasagne.layers import dnn
+
 
 def build_nature_cnn_gpu(n_actions, input_var):
-
+    from lasagne.layers import dnn
 
     l_in = lasagne.layers.InputLayer(
         shape=(32, 4, 80, 80),
@@ -102,6 +102,7 @@ def build_nature_cnn(n_actions, input_var=None):
 
 
 def build_nips_cnn_gpu(n_actions, input_var):
+    from lasagne.layers import dnn
 
     network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),
                                         input_var=input_var)
@@ -198,7 +199,7 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, initial_weights_file=None, build_cnn=build_nature_cnn):
+    def __init__(self, n_actions, replay_memory, build_cnn, updates, initial_weights_file=None):
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
@@ -261,12 +262,11 @@ class DQNAlgo:
                                                    gamma=self.gamma)
 
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        updates = lasagne.updates.rmsprop(self.loss, params, learning_rate=0.0002, rho=0.95,
-                                          epsilon=1e-6)  # TODO RMSPROP in the paper has slightly different definition (see Lua)
+
         print("Compiling train_fn.")
         self.train_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                         [self.loss, self.err, T.transpose(__y), T.transpose(__q), out, out_stale],
-                                        updates=updates)
+                                        updates=updates(self.loss, params))
         print("Compiling loss_fn.")
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
@@ -350,7 +350,7 @@ class DQNAlgo:
             self.n_parameter_updates += 1
 
             print('{i_frame} | loss: '.format(i_frame=self.i_frames), t[0])
-            
+
             self.log('{i_frame} | loss_elems: '.format(i_frame=self.i_frames), t[1])
             self.log('{i_frame} | y, q: '.format(i_frame=self.i_frames), t[2], t[3])
             self.log('{i_frame} | out: '.format(i_frame=self.i_frames), t[4])

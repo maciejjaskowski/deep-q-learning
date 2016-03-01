@@ -3,7 +3,7 @@ import q_learning as q
 import ale_game as ag
 import dqn
 import theano
-
+import lasagne
 
 def latest(dir='.'):
     if dir == None:
@@ -40,7 +40,8 @@ def main(**kargs):
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
     dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
-                           build_cnn=kargs['dqn.network'])
+                           build_cnn=kargs['dqn.network'],
+                           updates=kargs['dqn.updates'])
 
     dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
     dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
@@ -165,7 +166,8 @@ d = {
     'dqn.log_frequency': 1,
     'dqn.replay_memory_size': 500000,
     'dqn.no_replay': False,
-    'dqn.network': dqn.build_nips_cnn_gpu
+    'dqn.network': dqn.build_nips_cnn_gpu,
+    'dqn.updates': lasagne.updates.rmsprop
      }
 
 if __name__ == "__main__":
@@ -182,8 +184,8 @@ if __name__ == "__main__":
         'weights_dir=',
         'show_mood',
         'dqn.no_replay',
-        'dqn.network='])
-
+        'dqn.network=',
+        'dqn.updates='])
 
     for o, a in optlist:
         if o in ("--visualize",):
@@ -214,6 +216,14 @@ if __name__ == "__main__":
                 d["dqn.network"] = dqn.build_nature_cnn_gpu
             elif a == 'nips_cnn_gpu':
                 d["dqn.network"] = dqn.build_nips_cnn_gpu
+        elif o in ("--dqn.updates",):
+            import updates
+            if a == 'deepmind_rmsprop':
+                d["dqn.updates"] = \
+                    lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.1)
+            elif a == 'rmsprop':
+                d["dqn.updates"] = \
+                    lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
         else:
             assert False, "unhandled option"
 
