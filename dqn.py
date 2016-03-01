@@ -349,7 +349,9 @@ class DQNAlgo:
 
             self.n_parameter_updates += 1
 
-            self.log('{i_frame} | loss: '.format(i_frame=self.i_frames), t[0], t[1])
+            print('{i_frame} | loss: '.format(i_frame=self.i_frames), t[0])
+            
+            self.log('{i_frame} | loss_elems: '.format(i_frame=self.i_frames), t[1])
             self.log('{i_frame} | y, q: '.format(i_frame=self.i_frames), t[2], t[3])
             self.log('{i_frame} | out: '.format(i_frame=self.i_frames), t[4])
             self.log('{i_frame} | out_stale: '.format(i_frame=self.i_frames), t[5])
