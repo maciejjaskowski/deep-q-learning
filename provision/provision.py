@@ -259,5 +259,11 @@ def plot():
     ax2.plot(lin, [calc(c) for c in lin], color='r')
     ax2.set_ylabel('Liczba przerwan', color='r')
 
+    fig2 = plt.figure()
+    npx = np.array(x)
+    npy = np.array(y)
+    npx = np.apply_along_axis(lambda x: x[0].total_seconds() / 60 / 60, 1, np.reshape((npx - max(npx)), (len(npx), 1)))
+
+    plt.plot(npx, npy)
 
 
