@@ -1,9 +1,8 @@
 import boto3
 import base64
 import time
-import sys
 from datetime import datetime
-from subprocess import call
+from gen_run import upload_user_data
 
 ec2 = boto3.client('ec2')
 
@@ -13,7 +12,7 @@ def _prices(az):
     a = []
     for i in range(1):
         res = ec2.describe_spot_price_history(StartTime=datetime(2016, 1, 1), InstanceTypes=['g2.2xlarge'],
-                                            AvailabilityZone=az, ProductDescriptions=['Linux/UNIX'], MaxResults=1000, NextToken=next_token)
+                                              AvailabilityZone=az, ProductDescriptions=['Linux/UNIX'], MaxResults=1000, NextToken=next_token)
         a = a + res['SpotPriceHistory']
         next_token = res['NextToken']
 
@@ -23,50 +22,6 @@ def _prices(az):
 def prices():
     return zip(_prices('us-east-1a'), _prices('us-east-1b'), _prices('us-east-1c'), _prices('us-east-1e'))
 
-
-def upload_user_data(**kargs):
-
-    script = """#!/bin/bash
-cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make && ./deviceQuery
-
-cd /home/{user_name}
-
-sudo su {user_name} -c "mkdir -p /home/{user_name}/.aws"
-
-sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
-
-
-sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
-sudo su {user_name} -c "cd {project_name} && git reset --hard {sha1}"
-sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
-sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
-sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
-
-sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
-
-
-export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:;
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64;
-echo $PATH > /home/{user_name}/path.log;
-echo $LD_LIBRARY_PATH /home/{user_name}/ld.log;
-cd /home/{user_name}/{project_name}
-THEANO_FLAGS='floatX=float32,mode=FAST_RUN,allow_gc=False,device=gpu,lib.cnmem=0.9' python ex1.py --dqn.network=nips_cnn_gpu 2>&1 | multilog t s100000 '!tai64nlocal|gzip' ./logs &
-
-watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/weights s3://{exp_name}/weights' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo \`date\` >> /home/{user_name}/last_sync" &
-        """.format(**kargs)
-
-    s3 = boto3.resource('s3')
-
-    s3.create_bucket(ACL='private', Bucket=kargs['exp_name'])
-
-    k = s3.Object(kargs['exp_name'], 'config/run.sh')
-    k.put(Body=script)
-
-    call(["aws", "s3", "sync", "../analysis", "s3://" + kargs['exp_name'] + "/analysis"])
-    call(["mkdir", "-p", "../" + kargs['exp_name']])
-    call(["cp", "../analysis/sync.sh", "../" + kargs['exp_name']])
-
-    return script
 
 
 def provision(client_token, availability_zone, spot_price):
@@ -169,7 +124,7 @@ def provision(client_token, availability_zone, spot_price):
 def main(availability_zone, spot_price, client_token):
 
     project_name = "deep-q-learning"
-    from subprocess import Popen,PIPE
+    from subprocess import Popen, PIPE
     process = Popen(["git", "rev-parse", "HEAD"], shell=False, stdout=PIPE)
     sha1, _ = process.communicate(str.encode("utf-8"))
     sha1 = sha1[:-1]
@@ -217,8 +172,6 @@ if __name__ == "__main__":
         else:
             assert False, "unhandled option"
 
-
-
     main(**d)
 
 
@@ -229,7 +182,7 @@ def plot():
     plt.ion()
     fig, ax1 = plt.subplots()
 
-    x,y =zip(*[(p['Timestamp'], p['SpotPrice']) for p in _prices('us-east-1a')])
+    x, y = zip(*[(p['Timestamp'], p['SpotPrice']) for p in _prices('us-east-1a')])
     print(min(x))
     print(max(x))
     print(len(x))
