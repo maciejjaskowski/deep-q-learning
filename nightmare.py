@@ -44,11 +44,11 @@ def main(**kargs):
 
 
     out = lasagne.layers.get_output(network)
-    loss = -T.sum(out)
+    loss = -out[1] # shoot
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")
-    train_fn = theano.function([], outputs=[loss],
+    train_fn = theano.function([], outputs=[out, loss],
                                    updates=updates(loss, [s0_var], learning_rate))
 
 
@@ -65,10 +65,11 @@ def main(**kargs):
     prev = initial
     jitter = 8
     loss = 0
+    n_report = 1000.0
     for i in range(100000):
         ox, oy = np.random.randint(-jitter, jitter+1, 2)
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), ox, -1), oy, -2)) # apply jitter shift
-        loss = loss + train_fn()[0]
+        loss = loss + train_fn()[0][0]
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), -ox, -1), -oy, -2))
         keep_as_img_fn()
 
@@ -76,13 +77,13 @@ def main(**kargs):
         if np.any(np.isnan(s0_var.get_value())):
             break
 
-        if i % 1000 == 0:
+        if i % n_report == 0:
 
             print(i)
             np.savez('dream/dream_{0:06d}.npz'.format(i), s0_var.get_value())
             print("diff: ", np.sum(s0_var.get_value() - prev))
             print("abs: ", np.sum(s0_var.get_value()))
-            print("loss: ", loss)
+            print("loss: ", loss / n_report)
             print()
             loss = 0
 
