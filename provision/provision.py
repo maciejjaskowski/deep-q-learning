@@ -6,7 +6,7 @@ from gen_run import upload_user_data
 
 ec2 = boto3.client('ec2')
 
-instanceType = 'm4.large'
+instanceType = 'g2.2xlarge'
 
 def _prices(az):
     next_token = ''
