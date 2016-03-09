@@ -6,12 +6,13 @@ from gen_run import upload_user_data
 
 ec2 = boto3.client('ec2')
 
+instanceType = 'm4.large'
 
 def _prices(az):
     next_token = ''
     a = []
     for i in range(1):
-        res = ec2.describe_spot_price_history(StartTime=datetime(2016, 1, 1), InstanceTypes=['g2.2xlarge'],
+        res = ec2.describe_spot_price_history(StartTime=datetime(2016, 1, 1), InstanceTypes=[instanceType],
                                               AvailabilityZone=az, ProductDescriptions=['Linux/UNIX'], MaxResults=1000, NextToken=next_token)
         a = a + res['SpotPriceHistory']
         next_token = res['NextToken']
@@ -43,7 +44,7 @@ def provision(client_token, availability_zone, spot_price):
                                         LaunchSpecification={
                                             'ImageId': 'ami-bdd2efd7',
                                             'KeyName': 'gpu-east',
-                                            'InstanceType': 'g2.2xlarge',
+                                            'InstanceType': instanceType,
                                             'Placement': {
                                                 'AvailabilityZone': availability_zone
                                             },
@@ -183,7 +184,7 @@ if __name__ == "__main__":
             f.write("#!/bin/bash\n")
             f.write(' '.join(sys.argv))
 
-    #main(**d)
+    main(**d)
 
 
 def plot():
