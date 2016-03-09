@@ -158,6 +158,11 @@ def main(availability_zone, spot_price, client_token):
 if __name__ == "__main__":
     import sys
     import getopt
+    import os
+
+    print("Running ")
+    print(' '.join(sys.argv))
+
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'price=',
         'client_token='
@@ -172,7 +177,13 @@ if __name__ == "__main__":
         else:
             assert False, "unhandled option"
 
-    main(**d)
+    if not os.path.exists("../" + d['client_token']):
+        os.makedirs("../" + d['client_token'])
+        with open("../" + d['client_token'] + '/provision.sh', 'w') as f:
+            f.write("#!/bin/bash\n")
+            f.write(' '.join(sys.argv))
+
+    #main(**d)
 
 
 def plot():
