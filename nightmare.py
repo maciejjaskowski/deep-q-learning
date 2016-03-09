@@ -31,7 +31,7 @@ def main(**kargs):
         theano.config.optimizer = 'fast_compile'
 
     build_cnn = kargs['dqn.network']
-    updates = kargs['dqn.updates']
+
     learning_rate = kargs['learning_rate']
     n_actions = 6
 
@@ -44,12 +44,13 @@ def main(**kargs):
 
 
     out = lasagne.layers.get_output(network)
-    loss = -out[0][1]*out[0][1] + out[0][0] + out[0][2] + out[0][3] + out[0][4] + out[0][5]# shoot
+    loss = -T.sum(out) #out[0][1]*out[0][1] - out[0][0] - out[0][2] + out[0][3] + out[0][4] + out[0][5]# shoot
+    g_loss = T.grad(loss)
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")
     train_fn = theano.function([], outputs=[out, loss],
-                                   updates=updates(loss, [s0_var], learning_rate))
+                                   updates=[(s0_var, s0_var - learning_rate * g_loss * T.abs(g_loss).mean())])
 
 
 
