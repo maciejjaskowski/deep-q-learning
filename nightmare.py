@@ -59,6 +59,11 @@ def main(**kargs):
                                                                                      T.max(T.stack(T.zeros_like(s0_var), s0_var), axis=0)),
                                                                              axis=0))])
 
+    def adjust_contrast():
+        m = (s0_var.get_value() + np.min(s0_var.get_value()))
+        span = np.max(m)
+        s0_var.set_value(m / span)
+
     from theano.tensor.shared_randomstreams import RandomStreams
     srng = RandomStreams(seed=234)
 
@@ -67,26 +72,26 @@ def main(**kargs):
     jitter = 16
     loss = 0
     n_report = 1000.0
-    for i in range(100000):
+    for i in range(10):
         ox, oy = np.random.randint(-jitter, jitter+1, 2)
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), ox, -1), oy, -2)) # apply jitter shift
         loss = loss + train_fn()[0][0]
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), -ox, -1), -oy, -2))
-        #keep_as_img_fn()
+        keep_as_img_fn()
+        #adjust_contrast()
+        #print(np.sum(s0_var.get_value()))
 
 
         if np.any(np.isnan(s0_var.get_value())):
             break
 
-        if i % n_report == 0:
-
-            print(i)
-            np.savez('dream/dream_{0:06d}.npz'.format(i), s0_var.get_value())
-            print("diff: ", np.sum(s0_var.get_value() - prev))
-            print("abs: ", np.sum(s0_var.get_value()))
-            print("loss: ", loss / n_report)
-            print()
-            loss = 0
+        print(i)
+        np.savez('dream/dream_{0:06d}.npz'.format(i), s0_var.get_value())
+        print("diff: ", np.sum(s0_var.get_value() - prev))
+        print("abs: ", np.sum(s0_var.get_value()))
+        print("loss: ", loss / n_report)
+        print()
+        loss = 0
 
         prev = s0_var.get_value()
 
