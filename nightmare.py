@@ -44,7 +44,7 @@ def main(**kargs):
 
 
     out = lasagne.layers.get_output(network)
-    loss = lasagne.objectives.aggregate(lasagne.objectives.squared_error(out, T.zeros_like(out)))
+    loss = -T.sum(out)
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")

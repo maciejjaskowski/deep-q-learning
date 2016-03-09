@@ -16,7 +16,7 @@ def vis():
     vis = ag.SpaceInvadersGameCombined2Visualizer()
     paths = sorted(['dream/' + f for f in os.listdir('dream')])
 
-    for path in paths[1:len(paths):10]:
+    for path in paths[10:len(paths):10]:
         with np.load(path) as screen:
             print(path)
             print(screen['arr_0'] * 256)
