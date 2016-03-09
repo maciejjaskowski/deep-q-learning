@@ -45,12 +45,12 @@ def main(**kargs):
 
     out = lasagne.layers.get_output(network)
     loss = -T.sum(out) #out[0][1]*out[0][1] - out[0][0] - out[0][2] + out[0][3] + out[0][4] + out[0][5]# shoot
-    g_loss = T.grad(loss)
+    g_loss = T.grad(loss, s0_var)
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")
     train_fn = theano.function([], outputs=[out, loss],
-                                   updates=[(s0_var, s0_var - learning_rate * g_loss * T.abs(g_loss).mean())])
+                                   updates=[(s0_var, s0_var - learning_rate * g_loss * abs(g_loss).mean())])
 
 
 
@@ -64,7 +64,7 @@ def main(**kargs):
 
 
     prev = initial
-    jitter = 8
+    jitter = 16
     loss = 0
     n_report = 1000.0
     for i in range(100000):
