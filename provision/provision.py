@@ -40,7 +40,7 @@ def provision(client_token, availability_zone, spot_price):
                                         SpotPrice=spot_price,
                                         InstanceCount=1,
                                         AvailabilityZoneGroup=availability_zone,
-                                        Type='persistent',
+                                        Type='one-time',
                                         LaunchSpecification={
                                             'ImageId': 'ami-bdd2efd7',
                                             'KeyName': 'gpu-east',

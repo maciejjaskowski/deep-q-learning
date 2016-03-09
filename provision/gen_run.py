@@ -25,7 +25,10 @@ sudo su {user_name} -c "aws s3 sync s3://dqn-setup /home/{user_name}/dqn-setup"
 
 
 sudo su {user_name} -c "git clone https://github.com/maciejjaskowski/{project_name}.git"
-sudo su {user_name} -c "cd {project_name} && git reset --hard {sha1}"
+sudo su {user_name} -c "cd {project_name} && git checkout nightmare && git reset --hard {sha1}"
+sudo su {user_name} -c "cd {project_name}/weights && wget https://s3.amazonaws.com/dqn16/weights/weights_58000100.npz"
+
+sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/dream"
 sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/weights"
 sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
 sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
