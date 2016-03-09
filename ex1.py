@@ -27,7 +27,7 @@ def main(**kargs):
         theano.config.exception_verbosity = 'high'
         theano.config.optimizer = 'fast_compile'
 
-    ale = ag.init(display_screen=(kargs['visualize'] == 'ale'))
+    ale = ag.init(display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
     game = ag.SpaceInvadersGame(ale)
 
 
@@ -157,6 +157,7 @@ def const_on_space_invaders():
 
 d = {
     'visualize': False,
+    'record_dir': None,
     'weights_dir': 'weights',
     'theano_verbose': False,
     'show_mood': False,
@@ -175,6 +176,7 @@ if __name__ == "__main__":
     import getopt
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'visualize=',
+        'record_dir=',
         'dqn.replay_start_size=',
         'dqn.final_epsilon=',
         'dqn.initial_epsilon=',
@@ -190,6 +192,8 @@ if __name__ == "__main__":
     for o, a in optlist:
         if o in ("--visualize",):
             d['visualize'] = a
+        elif o in ("--record_dir",):
+            d['record_dir'] = a
         elif o in ("--weights_dir",):
             d['weights_dir'] = a
         elif o in ("--dqn.replay_start_size",):

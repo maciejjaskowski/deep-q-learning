@@ -11,10 +11,10 @@ from scipy import signal
 
 # USE_SDL = False
 # if USE_SDL:
-#  if sys.platform == 'darwin':   
+#  if sys.platform == 'darwin':
 #    import pygame
-#    pygame.init() 
-#    ale.setBool('sound', False) # Sound doesn't work on OSX    
+#    pygame.init()
+#    ale.setBool('sound', False) # Sound doesn't work on OSX
 #  elif sys.platform.startswith('linux'):
 #    ale.setBool('sound', True)
 
@@ -55,7 +55,7 @@ mergeArrValuesSet = set(mergeArr.values())
 mergeArrValues = sorted(list(mergeArrValuesSet))
 
 
-def init(display_screen=False):
+def init(display_screen=False, record_dir=None):
     if display_screen:
         import pygame
         pygame.init()
@@ -64,8 +64,11 @@ def init(display_screen=False):
     ale.setBool('display_screen', display_screen)
     ale.setInt('random_seed', 123)
     #ale.setBool('frame_skip', 1)
+    if record_dir is not None:
+        ale.setString("record_screen_dir", record_dir)
     ale.loadROM(rom_path + '/space_invaders.bin')
     ale.setFloat("repeat_action_probability", 0)
+
 
     return ale
 
