@@ -16,13 +16,13 @@ def vis():
     vis = ag.SpaceInvadersGameCombined2Visualizer()
     paths = sorted(['dream/' + f for f in os.listdir('dream')])
 
-    for path in paths[10:len(paths):10]:
+    for path in paths[0:len(paths):10]:
         with np.load(path) as screen:
             print(path)
             print(screen['arr_0'] * 256)
             vis.show(screen['arr_0'] * 256)
             import time
-            time.sleep(3)
+            time.sleep(3000)
 
             #raw_input("Press Enter to continue...")
 

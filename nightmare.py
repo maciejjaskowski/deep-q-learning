@@ -49,7 +49,7 @@ def main(**kargs):
 
     print("Compiling train_fn.")
     train_fn = theano.function([], outputs=[loss],
-                                   updates=lasagne.updates.sgd(loss, [s0_var], learning_rate))
+                                   updates=updates(loss, [s0_var], learning_rate))
 
 
     keep_as_img_fn = theano.function([], outputs=[], updates=[(s0_var, T.min(T.stack(T.ones_like(s0_var),
@@ -64,7 +64,7 @@ def main(**kargs):
         if np.any(np.isnan(s0_var.get_value())):
             break
 
-        if i % 100 == 0:
+        if i % 1000 == 0:
 
             print(i)
             np.savez('dream/dream_{0:06d}.npz'.format(i), s0_var.get_value())
