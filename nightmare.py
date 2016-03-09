@@ -44,7 +44,7 @@ def main(**kargs):
 
 
     out = lasagne.layers.get_output(network)
-    loss = -out[1] # shoot
+    loss = -out[0][1] # shoot
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")
