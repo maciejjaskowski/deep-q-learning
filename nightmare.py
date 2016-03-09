@@ -32,6 +32,7 @@ def main(**kargs):
 
     build_cnn = kargs['dqn.network']
     updates = kargs['dqn.updates']
+    learning_rate = kargs['learning_rate']
     n_actions = 6
 
     initial = np.random.random((1, 4, 80, 80)).astype(theano.config.floatX)
@@ -48,7 +49,7 @@ def main(**kargs):
 
     print("Compiling train_fn.")
     train_fn = theano.function([], outputs=[loss],
-                                   updates=lasagne.updates.sgd(loss, [s0_var], 0.005))
+                                   updates=lasagne.updates.sgd(loss, [s0_var], learning_rate))
 
 
     keep_as_img_fn = theano.function([], outputs=[], updates=[(s0_var, T.min(T.stack(T.ones_like(s0_var),
@@ -96,7 +97,8 @@ d = {
     'weights_dir': 'dqn16/weights',
     'theano_verbose': False,
     'dqn.network': dqn.build_nature_cnn,
-    'dqn.updates': lasagne.updates.rmsprop
+    'dqn.updates': lasagne.updates.rmsprop,
+    'learning_rate': 0.005
      }
 
 if __name__ == "__main__":
@@ -106,7 +108,8 @@ if __name__ == "__main__":
         'theano_verbose=',
         'weights_dir=',
         'dqn.network=',
-        'dqn.updates='])
+        'dqn.updates=',
+        'learning_rate='])
 
     for o, a in optlist:
         if o in ("--weights_dir",):
@@ -128,6 +131,8 @@ if __name__ == "__main__":
             elif a == 'rmsprop':
                 d["dqn.updates"] = \
                     lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
+        elif o in ("--learning_rate",):
+            d['learning_rate'] = float(a)
         else:
             assert False, "unhandled option"
 
