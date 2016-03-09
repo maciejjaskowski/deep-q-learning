@@ -6,7 +6,7 @@ import theano
 import theano.tensor as T
 import lasagne
 import numpy as np
-
+import time
 
 def vis():
     import os
@@ -19,10 +19,18 @@ def vis():
     for path in paths[0:len(paths):10]:
         with np.load(path) as screen:
             print(path)
-            print(screen['arr_0'] * 256)
-            vis.show(screen['arr_0'] * 256)
-            import time
-            time.sleep(3000)
+            while True:
+                for i in range(4):
+                    vis.show(256 * np.stack([screen['arr_0'][0][i],
+                              screen['arr_0'][0][i],
+                              screen['arr_0'][0][i],
+                              screen['arr_0'][0][i]]).reshape((1,4,80,80)))
+                    time.sleep(0.3)
+
+            #print(screen['arr_0'] * 256)
+            #vis.show(screen['arr_0'] * 256)
+
+
 
             #raw_input("Press Enter to continue...")
 

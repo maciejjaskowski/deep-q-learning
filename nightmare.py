@@ -52,14 +52,26 @@ def main(**kargs):
                                    updates=updates(loss, [s0_var], learning_rate))
 
 
+
+
     keep_as_img_fn = theano.function([], outputs=[], updates=[(s0_var, T.min(T.stack(T.ones_like(s0_var),
                                                                                      T.max(T.stack(T.zeros_like(s0_var), s0_var), axis=0)),
                                                                              axis=0))])
+
+    from theano.tensor.shared_randomstreams import RandomStreams
+    srng = RandomStreams(seed=234)
+
+
     prev = initial
+    jitter = 8
     loss = 0
     for i in range(100000):
+        ox, oy = np.random.randint(-jitter, jitter+1, 2)
+        s0_var.set_value(np.roll(np.roll(s0_var.get_value(), ox, -1), oy, -2)) # apply jitter shift
         loss = loss + train_fn()[0]
+        s0_var.set_value(np.roll(np.roll(s0_var.get_value(), -ox, -1), -oy, -2))
         keep_as_img_fn()
+
 
         if np.any(np.isnan(s0_var.get_value())):
             break
