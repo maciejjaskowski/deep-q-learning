@@ -44,13 +44,13 @@ def main(**kargs):
 
 
     out = lasagne.layers.get_output(network)
-    loss = -T.sum(out) #out[0][1]*out[0][1] - out[0][0] - out[0][2] + out[0][3] + out[0][4] + out[0][5]# shoot
+    loss = -T.sum(out[0][1]) #out[0][1]*out[0][1] - out[0][0] - out[0][2] + out[0][3] + out[0][4] + out[0][5]# shoot
     g_loss = T.grad(loss, s0_var)
     params = lasagne.layers.get_all_params(network, trainable=True)
 
     print("Compiling train_fn.")
     train_fn = theano.function([], outputs=[out, loss],
-                                   updates=[(s0_var, s0_var - learning_rate * g_loss * abs(g_loss).mean())])
+                                   updates=[(s0_var, s0_var - learning_rate * g_loss / abs(g_loss).mean())])
 
 
 
