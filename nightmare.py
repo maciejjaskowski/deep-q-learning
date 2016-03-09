@@ -72,7 +72,7 @@ def main(**kargs):
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), ox, -1), oy, -2)) # apply jitter shift
         loss = loss + train_fn()[0][0]
         s0_var.set_value(np.roll(np.roll(s0_var.get_value(), -ox, -1), -oy, -2))
-        keep_as_img_fn()
+        #keep_as_img_fn()
 
 
         if np.any(np.isnan(s0_var.get_value())):
