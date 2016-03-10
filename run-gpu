@@ -1,3 +1,0 @@
-#!/bin/bash
-cd /mnt/dqn/deep-q-learning
-THEANO_FLAGS=device=gpu python ex1.py >> log.out 2>> log.err

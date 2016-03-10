@@ -183,7 +183,7 @@ if __name__ == "__main__":
             f.write("#!/bin/bash\n")
             f.write(' '.join(sys.argv))
 
-    #main(**d)
+    main(**d)
 
 
 def plot():

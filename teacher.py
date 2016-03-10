@@ -16,24 +16,6 @@ class GameNoVisualizer:
         pass
 
 
-class EveryNVisualizer:
-    def __init__(self, n, visualizer):
-        self.n = n
-        self.right_visualizer = visualizer
-        self.visualizer = GameNoVisualizer()
-        self.i = 0
-
-    def show(self, game):
-        self.visualizer.show(game)
-
-    def next_game(self):
-        self.i += 1
-        if (self.i % self.n == self.n - 1):
-            self.visualizer = self.right_visualizer
-        else:
-            self.visualizer = GameNoVisualizer()
-
-
 class RandomAlgo:
     def __init__(self, n_actions):
         self.n_actions = n_actions

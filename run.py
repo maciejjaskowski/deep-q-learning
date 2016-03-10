@@ -1,9 +1,10 @@
-#def dqn_on_space_invaders_gpu(visualize=False, theano_verbose=False, initial_weights_file=None, initial_i_frame=0):
-import q_learning as q
+import teacher as q
 import ale_game as ag
 import dqn
 import theano
 import lasagne
+import network
+
 
 def latest(dir='.'):
     if dir == None:
@@ -54,8 +55,8 @@ def main(**kargs):
     import Queue
     dqn_algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
 
-    if kargs['show_mood']:
-        plot = Plot()
+    if kargs['show_mood'] is not None:
+        plot = kargs['show_mood']()
 
         def worker():
             while True:
@@ -75,6 +76,14 @@ def main(**kargs):
                         ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
     teacher.teach(500000)
 
+
+class Log(object):
+    def __init__(self):
+        pass
+
+    def show(self, info):
+        print(str(info['i_frame']) + " | Expectations: " + str(info['expectations']))
+        print(str(info['i_frame']) + " | Surprise: " + str(info['surprise']))
 
 class Plot(object):
 
@@ -134,7 +143,7 @@ class Plot(object):
 
 
 def const_on_space_invaders():
-    import q_learning as q
+    import teacher as q
     import ale_game as ag
     import dqn
     reload(q)
@@ -160,14 +169,14 @@ d = {
     'record_dir': None,
     'weights_dir': 'weights',
     'theano_verbose': False,
-    'show_mood': False,
+    'show_mood': None,
     'dqn.replay_start_size': 50000,
     'dqn.initial_epsilon': 1,
     'dqn.final_epsilon': 0.1,
     'dqn.log_frequency': 1,
     'dqn.replay_memory_size': 500000,
     'dqn.no_replay': False,
-    'dqn.network': dqn.build_nips_cnn_gpu,
+    'dqn.network': network.build_nature_cnn,
     'dqn.updates': lasagne.updates.rmsprop
      }
 
@@ -184,7 +193,7 @@ if __name__ == "__main__":
         'replay_memory_size=',
         'theano_verbose=',
         'weights_dir=',
-        'show_mood',
+        'show_mood=',
         'dqn.no_replay',
         'dqn.network=',
         'dqn.updates='])
@@ -210,16 +219,19 @@ if __name__ == "__main__":
         elif o in ("--theano_verbose",):
             d["theano_verbose"] = bool(a)
         elif o in ("--show_mood",):
-            d["show_mood"] = True
+            if a == 'plot':
+                d["show_mood"] = Plot
+            else:
+                d["show_modd"] = Log
         elif o in ("--dqn.no_replay",):
             d["dqn.no_replay"] = True
         elif o in ("--dqn.network",):
             if a == 'cnn':
-                d["dqn.network"] = dqn.build_nature_cnn
+                d["dqn.network"] = network.build_nature_cnn
             elif a == 'cnn_gpu':
-                d["dqn.network"] = dqn.build_nature_cnn_gpu
+                d["dqn.network"] = network.build_nature_cnn_gpu
             elif a == 'nips_cnn_gpu':
-                d["dqn.network"] = dqn.build_nips_cnn_gpu
+                d["dqn.network"] = network.build_nips_cnn_gpu
         elif o in ("--dqn.updates",):
             import updates
             if a == 'deepmind_rmsprop':
