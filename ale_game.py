@@ -1,58 +1,6 @@
 from ale_python_interface import ALEInterface
 import numpy as np
 from skimage import measure
-from copy import deepcopy
-import scipy
-from scipy import signal
-
-# Set USE_SDL to true to display the screen. ALE must be compilied
-# with SDL enabled for this to work. On OSX, pygame init is used to
-# proxy-call SDL_main.
-
-# USE_SDL = False
-# if USE_SDL:
-#  if sys.platform == 'darwin':
-#    import pygame
-#    pygame.init()
-#    ale.setBool('sound', False) # Sound doesn't work on OSX
-#  elif sys.platform.startswith('linux'):
-#    ale.setBool('sound', True)
-
-
-# ale.setString("record_screen_dir", "record")
-
-# Load the ROM file
-
-
-ARR = {0: (0, 0, 0),
-       6: (200, 200, 0),
-       20: (0, 200, 200),
-       52: (200, 0, 200),
-       82: (0, 0, 200),
-       196: (196, 0, 0),
-       226: (0, 226, 0),
-       246: (146, 0, 0)}
-COLORS = sorted(ARR.keys())
-
-gray_scale_lookup = {0: (0, 0, 0),
-                     6: (30, 30, 30),
-                     20: (60, 60, 60),
-                     52: (90, 90, 90),
-                     82: (120, 120, 120),
-                     196: (150, 150, 150),
-                     226: (180, 180, 180),
-                     246: (210, 210, 210)}
-
-mergeArr = {0: 0,
-            6: 6,
-            20: 20,  # robaki
-            52: 52,  # oslony
-            196: 196,
-            226: 0,
-            246: 0}
-
-mergeArrValuesSet = set(mergeArr.values())
-mergeArrValues = sorted(list(mergeArrValuesSet))
 
 
 def init(display_screen=False, record_dir=None):
@@ -63,12 +11,10 @@ def init(display_screen=False, record_dir=None):
     ale = ALEInterface()
     ale.setBool('display_screen', display_screen)
     ale.setInt('random_seed', 123)
-    #ale.setBool('frame_skip', 1)
     if record_dir is not None:
         ale.setString("record_screen_dir", record_dir)
     ale.loadROM(rom_path + '/space_invaders.bin')
     ale.setFloat("repeat_action_probability", 0)
-
 
     return ale
 

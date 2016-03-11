@@ -71,11 +71,12 @@ class DQNAlgo:
 
         self.target_network_update_frequency = 10000
 
-        s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var = T.tensor4("s0",
-                                                                                dtype=theano.config.floatX), T.bmatrix(
-            "a0"), T.wcol(
-            "r0"), T.tensor4("s1", dtype=theano.config.floatX), T.bcol(
-            "future_reward_indicator")
+        s0_var = T.tensor4("s0", dtype=theano.config.floatX)
+        a0_var = T.bmatrix("a0")
+        r0_var = T.wcol("r0")
+        s1_var = T.tensor4("s1", dtype=theano.config.floatX)
+        future_reward_indicator_var = T.bcol("future_reward_indicator")
+
         self.n_actions = n_actions
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
@@ -84,7 +85,7 @@ class DQNAlgo:
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
         self.network_stale = build_network(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256))
-        print("Compiling forward stale.")
+        print("Compiling forward_stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
 

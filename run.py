@@ -40,7 +40,9 @@ def main(**kargs):
         return game
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
-    dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
+    dqn_algo = dqn.DQNAlgo(game.n_actions(),
+                           replay_memory=replay_memory,
+                           initial_weights_file=initial_weights_file,
                            build_network=kargs['dqn.network'],
                            updates=kargs['dqn.updates'])
 
@@ -85,6 +87,7 @@ class Log(object):
         print(str(info['i_frame']) + " | Expectations: " + str(info['expectations']))
         print(str(info['i_frame']) + " | Surprise: " + str(info['surprise']))
 
+
 class Plot(object):
 
     def __init__(self):
@@ -126,20 +129,8 @@ class Plot(object):
             self.surprise_l.set_xdata(list(range(len(self.surprise_y))))
             self.surprise_l.set_ydata(self.surprise_y)
 
-            # self.mi.set_xdata([self.xlim[0]] * 2)
-            # self.mi.set_ydata([-0.08, 0.08])
-            # self.ma.set_xdata([self.xlim[1]] * 2)
-            # self.ma.set_ydata([-0.08, 0.08])
-
-            #pos = np.arange(-1.2, 0.5, 0.05)
-            #vel = np.arange(-0.07, 0.07, 0.005)
-
-            #self.expectation.line(expectations)
-
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
-
-            #time.sleep(0.01)
 
 
 def const_on_space_invaders():
