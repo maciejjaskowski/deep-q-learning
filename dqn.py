@@ -42,7 +42,7 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, build_cnn, updates, initial_weights_file=None):
+    def __init__(self, n_actions, replay_memory, build_network, updates, initial_weights_file=None):
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
@@ -79,11 +79,11 @@ class DQNAlgo:
         self.n_actions = n_actions
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
-        self.network = build_cnn(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256))
+        self.network = build_network(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256))
         print("Compiling forward.")
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
-        self.network_stale = build_cnn(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256))
+        self.network_stale = build_network(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256))
         print("Compiling forward stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))

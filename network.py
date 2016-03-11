@@ -4,7 +4,7 @@ from __future__ import division
 import lasagne
 
 
-def build_nature_cnn_gpu(n_actions, input_var):
+def build_nature_dnn(n_actions, input_var):
     from lasagne.layers import dnn
 
     l_in = lasagne.layers.InputLayer(
@@ -61,7 +61,7 @@ def build_nature_cnn_gpu(n_actions, input_var):
     return l_out
 
 
-def build_nature_cnn(n_actions, input_var=None):
+def build_nature(n_actions, input_var=None):
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)
 
@@ -95,7 +95,35 @@ def build_nature_cnn(n_actions, input_var=None):
     return network
 
 
-def build_nips_cnn_gpu(n_actions, input_var):
+def build_nips(n_actions, input_var):
+    network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),
+                                        input_var=input_var)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=16, filter_size=(8, 8), stride=4,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.GlorotUniform())
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=32, filter_size=(4, 4), stride=2,
+        nonlinearity=lasagne.nonlinearities.rectify)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=256,
+        nonlinearity=lasagne.nonlinearities.rectify)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=n_actions,
+        nonlinearity=None,
+        W=lasagne.init.HeUniform(),
+        b=lasagne.init.Constant(.1))
+
+    return network
+
+
+def build_nips_dnn(n_actions, input_var):
     from lasagne.layers import dnn
 
     network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),

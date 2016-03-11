@@ -41,7 +41,7 @@ def main(**kargs):
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
     dqn_algo = dqn.DQNAlgo(game.n_actions(), replay_memory=replay_memory, initial_weights_file=initial_weights_file,
-                           build_cnn=kargs['dqn.network'],
+                           build_network=kargs['dqn.network'],
                            updates=kargs['dqn.updates'])
 
     dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
@@ -176,7 +176,7 @@ d = {
     'dqn.log_frequency': 1,
     'dqn.replay_memory_size': 500000,
     'dqn.no_replay': False,
-    'dqn.network': network.build_nature_cnn,
+    'dqn.network': network.build_nature,
     'dqn.updates': lasagne.updates.rmsprop
      }
 
@@ -222,16 +222,18 @@ if __name__ == "__main__":
             if a == 'plot':
                 d["show_mood"] = Plot
             else:
-                d["show_modd"] = Log
+                d["show_mood"] = Log
         elif o in ("--dqn.no_replay",):
             d["dqn.no_replay"] = True
         elif o in ("--dqn.network",):
-            if a == 'cnn':
-                d["dqn.network"] = network.build_nature_cnn
-            elif a == 'cnn_gpu':
-                d["dqn.network"] = network.build_nature_cnn_gpu
-            elif a == 'nips_cnn_gpu':
-                d["dqn.network"] = network.build_nips_cnn_gpu
+            if a == 'nature':
+                d["dqn.network"] = network.build_nature
+            elif a == 'nips':
+                d["dqn.network"] = network.build_nips
+            elif a == 'nature_dnn':
+                d["dqn.network"] = network.build_nature_dnn
+            elif a == 'nips_dnn':
+                d["dqn.network"] = network.build_nips_dnn
         elif o in ("--dqn.updates",):
             import updates
             if a == 'deepmind_rmsprop':
