@@ -13,7 +13,7 @@ output is the same control commands as a human would have with a controller
 * Theano
 * Lasagne
 * pygame
-* [Arcade Learning Environment (ALE) 0.5.1](arcadelearningenvironment.org)
+* [Arcade Learning Environment (ALE) 0.5.1](http://arcadelearningenvironment.org)
 * Atari 2600 ROM of space_invaders.bin
 
 ## Amazon Instance Installation
