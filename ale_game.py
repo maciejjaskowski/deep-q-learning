@@ -100,8 +100,7 @@ class SpaceInvadersGame(object):
 
 
         self.state = np.dot(self.ale.getScreenRGB(), np.array([0.2126, 0.7152, 0.0722])).astype(np.int8)
-        import time
-        time.sleep(0.01)
+
         if self.lives != self.ale.lives():
             self.lives = self.ale.lives()
             return 40
