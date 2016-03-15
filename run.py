@@ -229,7 +229,7 @@ if __name__ == "__main__":
             import updates
             if a == 'deepmind_rmsprop':
                 d["dqn.updates"] = \
-                    lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.1)
+                    lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
             elif a == 'rmsprop':
                 d["dqn.updates"] = \
                     lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
