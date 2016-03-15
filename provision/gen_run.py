@@ -31,15 +31,14 @@ sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/logs"
 sudo su {user_name} -c "mkdir -p /home/{user_name}/{project_name}/record0.1"
 sudo su {user_name} -c "cp /home/{user_name}/dqn-setup/space_invaders.bin /home/{user_name}/{project_name}/"
 
-sudo su {user_name} -c "aws s3 sync s3://{exp_name}/weights /home/{user_name}/{project_name}/weights"
-
+sudo su {user_name} -c "cd {project_name}/weights && wget https://s3.amazonaws.com/dqn16/weights/weights_59800100.npz"
 
 export PATH=/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:;
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64;
 echo $PATH > /home/{user_name}/path.log;
 echo $LD_LIBRARY_PATH /home/{user_name}/ld.log;
 cd /home/{user_name}/{project_name}
-THEANO_FLAGS='floatX=float32,mode=FAST_RUN,allow_gc=False,device=gpu,lib.cnmem=0.9' python run.py --dqn.final_epsilon=0.1 --dqn.initial_epsilon=0.1 --show_mood=Log --dqn.no_replay --record_dir=record0.1 --dqn.network=nature_dnn --dqn.updates=deepmind_rmsprop 2>&1 | multilog t s100000 '!tai64nlocal|gzip' ./logs &
+THEANO_FLAGS='floatX=float32,mode=FAST_RUN,allow_gc=False,device=gpu,lib.cnmem=0.9' python run.py --dqn.final_epsilon=0.05 --dqn.initial_epsilon=0.05 --dqn.no_replay --dqn.network=nature_dnn --dqn.updates=deepmind_rmsprop 2>&1 | multilog t s100000 '!tai64nlocal|gzip' ./logs &
 
 watch -n 60 "sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/record0.1 s3://{exp_name}/record0.1' && sudo su {user_name} -c 'aws s3 sync /home/{user_name}/{project_name}/logs s3://{exp_name}/logs' && echo \`date\` >> /home/{user_name}/last_sync" &
         """.format(**kargs)
