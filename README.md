@@ -28,7 +28,7 @@ the environment.
 [Human-level control through deep reinforcement
 learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf)
 
-[Arcade Learning Environment](arcadelearningenvironment.org)
+[Arcade Learning Environment](http://www.arcadelearningenvironment.org)
 
 
 [Reccurent Model of Visual Attention](http://papers.nips.cc/paper/5542-recurrent-models-of-visual-attention.pdf) - applying q-learning to figure out what part of the image to look at.
