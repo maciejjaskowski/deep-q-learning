@@ -60,6 +60,12 @@ class SpaceInvadersGameCombined2Visualizer:
         rect = pygame.Surface((160, 640))
 
         image = np.reshape(zip(*list(f_l(np.concatenate(prev_frames).flatten()))), (320, 80, 3))
+        image[240,:,0] = 100
+        image[:,0,0] = 100
+        image[-1,:,0] = 100
+        image[:,-1,0] = 100
+        image[:,8,1] = 100
+        image[312,:,1] = 100
 
         image = np.transpose(image, [1, 0, 2])
 

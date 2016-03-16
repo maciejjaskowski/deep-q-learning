@@ -90,12 +90,11 @@ class Teacher:
         old_cum_reward = game.cum_reward
 
         action = self.algo.action()
-        #print("action: ", action)
 
         new_state = None
-        skip = 0
+        skip_because_of_termination = 0
         for i in range(self.repeat_action):
-            skip = max(skip, game.input(action))
+            skip_because_of_termination = max(skip_because_of_termination, game.input(action))
             new_state = self.phi(game.get_state())
 
         exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
@@ -103,12 +102,13 @@ class Teacher:
 
         self.game_visualizer.show(new_state)
 
-        for i in range(skip):
+        for i in range(skip_because_of_termination):
             game.input(action)
             new_state = self.phi(game.get_state())
-            self.game_visualizer.show(new_state)
+
 
         self.old_state = new_state
+        self.game_visualizer.show(new_state)
         if self.sleep_seconds != 0:
             import time
             time.sleep(self.sleep_seconds)

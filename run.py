@@ -40,6 +40,7 @@ def main(**kargs):
         return game
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
+    # dqn_algo = q.ConstAlgo([3])
     dqn_algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
                            initial_weights_file=initial_weights_file,
@@ -219,6 +220,8 @@ if __name__ == "__main__":
         elif o in ("--dqn.network",):
             if a == 'nature':
                 d["dqn.network"] = network.build_nature
+            if a == 'nature_with_pad':
+                d["dqn.network"] = network.build_nature_with_pad
             elif a == 'nips':
                 d["dqn.network"] = network.build_nips
             elif a == 'nature_dnn':
