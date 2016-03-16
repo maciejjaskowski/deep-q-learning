@@ -92,17 +92,17 @@ class Teacher:
         action = self.algo.action()
 
         new_state = None
-        skip_because_of_termination = 0
+        skip_because_of_loss_of_life = 0
         for i in range(self.repeat_action):
-            skip_because_of_termination = max(skip_because_of_termination, game.input(action))
+            skip_because_of_loss_of_life = max(skip_because_of_loss_of_life, game.input(action))
             new_state = self.phi(game.get_state())
 
-        exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished)
+        exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished or (skip_because_of_loss_of_life > 0))
         self.algo.feedback(exp)
 
         self.game_visualizer.show(new_state)
 
-        for i in range(skip_because_of_termination):
+        for i in range(skip_because_of_loss_of_life):
             game.input(action)
             new_state = self.phi(game.get_state())
 
