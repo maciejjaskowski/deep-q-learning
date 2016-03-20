@@ -93,6 +93,7 @@ class DQNAlgo:
             with np.load(initial_weights_file) as initial_weights:
                 param_values = [initial_weights['arr_%d' % i] for i in range(len(initial_weights.files))]
                 lasagne.layers.set_all_param_values(self.network, param_values)
+            self.i_frames -= self.replay_start_size
 
         self._update_network_stale()
 

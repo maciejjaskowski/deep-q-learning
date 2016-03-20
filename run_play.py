@@ -1,12 +1,14 @@
 import run
+import network
 
 d = run.d
 d['dqn.no_replay'] = True
-d['visualize'] = 'q'
+d['visualize'] = 'ale'
+d['dqn.network'] = network.build_nature_with_pad
 d['dqn.replay_start_size'] = 100
-d['dqn.log_frequency'] = 10
-d['dqn.final_epsilon'] = 0.1
-d['dqn.initial_epsilon'] = 0.1
-d['weights_dir'] = 'weights'
+d['dqn.log_frequency'] = 1
+d['dqn.final_epsilon'] = 0.05
+d['dqn.initial_epsilon'] = 0.05
+d['weights_dir'] = 'dqn20/weights'
 d['show_mood'] = run.Plot
 run.main(**d)
