@@ -97,6 +97,86 @@ def build_nature_with_pad(n_actions, input_var=None):
     return network
 
 
+def build_nature_with_pad2(n_actions, input_var=None):
+    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+                                        input_var=input_var)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=32, filter_size=(8, 8), stride=4, pad='same',
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.GlorotUniform(),
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=64, filter_size=(4, 4), stride=2, pad='same',
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=64, filter_size=(3, 3), stride=1, pad='same',
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=512,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=n_actions,
+        b=lasagne.init.Constant(.1))
+
+    return network
+
+
+def build_nature_with_pad3(n_actions, input_var=None):
+    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+                                        input_var=input_var)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=32, filter_size=(8, 8), stride=4, pad=4,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.GlorotUniform(),
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=64, filter_size=(4, 4), stride=2, pad=2,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.Conv2DLayer(
+        network, num_filters=64, filter_size=(3, 3), stride=1, pad=1,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    print(network.output_shape)
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=512,
+        nonlinearity=lasagne.nonlinearities.rectify,
+        b=lasagne.init.Constant(.1))
+
+    network = lasagne.layers.DenseLayer(
+        network,
+        num_units=n_actions,
+        b=lasagne.init.Constant(.1))
+
+    return network
+
+
 def build_nature(n_actions, input_var=None):
     network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
                                         input_var=input_var)

@@ -220,8 +220,12 @@ if __name__ == "__main__":
         elif o in ("--dqn.network",):
             if a == 'nature':
                 d["dqn.network"] = network.build_nature
-            if a == 'nature_with_pad':
+            elif a == 'nature_with_pad':
                 d["dqn.network"] = network.build_nature_with_pad
+            elif a == 'nature_with_pad2':
+                d["dqn.network"] = network.build_nature_with_pad2
+            elif a == 'nature_with_pad3':
+                d["dqn.network"] = network.build_nature_with_pad3
             elif a == 'nips':
                 d["dqn.network"] = network.build_nips
             elif a == 'nature_dnn':
