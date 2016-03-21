@@ -102,7 +102,7 @@ def build_nature_with_pad2(n_actions, input_var=None):
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=32, filter_size=(8, 8), stride=4, pad='same',
+        network, num_filters=32, filter_size=(8, 8), stride=4, pad=2,
         nonlinearity=lasagne.nonlinearities.rectify,
         W=lasagne.init.GlorotUniform(),
         b=lasagne.init.Constant(.1))
@@ -110,14 +110,14 @@ def build_nature_with_pad2(n_actions, input_var=None):
     print(network.output_shape)
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=64, filter_size=(4, 4), stride=2, pad='same',
+        network, num_filters=64, filter_size=(4, 4), stride=2, pad=1,
         nonlinearity=lasagne.nonlinearities.rectify,
         b=lasagne.init.Constant(.1))
 
     print(network.output_shape)
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=64, filter_size=(3, 3), stride=1, pad='same',
+        network, num_filters=64, filter_size=(3, 3), stride=1, pad=1,
         nonlinearity=lasagne.nonlinearities.rectify,
         b=lasagne.init.Constant(.1))
 
