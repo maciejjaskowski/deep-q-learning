@@ -29,7 +29,8 @@ class Phi(object):
     def __call__(self, state):
         self.frame_count += 1
 
-        cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        #cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        cropped = measure.block_reduce((np.reshape(state, (210, 160))[40:-10, :]), (2, 2), func=np.mean).astype(dtype=np.int8)
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)
