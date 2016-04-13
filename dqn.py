@@ -248,6 +248,7 @@ def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamm
     y = r0_var + gamma * future_reward_indicator_var * T.max(out_stale, axis=1, keepdims=True)  # 32 x 1
     q = T.sum(a0_var * out, axis=1, keepdims=True)  # 32 x 1
     err = y - q
+    theano.shared
 
     quadratic_part = T.minimum(abs(err), 1)
     linear_part = abs(err) - quadratic_part

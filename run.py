@@ -28,8 +28,8 @@ def main(**kargs):
         theano.config.exception_verbosity = 'high'
         theano.config.optimizer = 'fast_compile'
 
-    ale = ag.init(display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
-    game = ag.SpaceInvadersGame(ale)
+    ale = ag.init(game=kargs['game'], display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
+    game = ag.ALEGame(ale)
 
 
     def new_game():
@@ -76,7 +76,7 @@ def main(**kargs):
 
     visualizer = ag.SpaceInvadersGameCombined2Visualizer() if kargs['visualize'] == 'q' else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
-                        ag.Phi(skip_every=4), repeat_action=4, sleep_seconds=0)
+                        ag.Phi(skip_every=4, reshape=kargs['reshape']), repeat_action=4, sleep_seconds=0)
     teacher.teach(500000)
 
 
@@ -143,7 +143,7 @@ def const_on_space_invaders():
     reload(dqn)
 
     ale = ag.init()
-    game = ag.SpaceInvadersGame(ale)
+    game = ag.ALEGame(ale)
 
     def new_game():
         game.ale.reset_game()
@@ -153,10 +153,12 @@ def const_on_space_invaders():
 
     const_algo = q.ConstAlgo([2, 2, 2, 2, 2, 0, 0, 0, 0])
     teacher = q.Teacher(new_game, const_algo, ag.SpaceInvadersGameCombined2Visualizer(),
-                        ag.Phi(skip_every=6), repeat_action=6)
+                        ag.Phi(skip_every=6), repeat_action=6, reshape="max")
     teacher.teach(1)
 
 d = {
+    'game': 'space_invaders',
+    'reshape': 'max',
     'visualize': False,
     'record_dir': None,
     'weights_dir': 'weights',
@@ -176,6 +178,8 @@ if __name__ == "__main__":
     import sys
     import getopt
     optlist, args = getopt.getopt(sys.argv[1:], '', [
+        'game=',
+        'reshape=',
         'visualize=',
         'record_dir=',
         'dqn.replay_start_size=',
@@ -193,6 +197,10 @@ if __name__ == "__main__":
     for o, a in optlist:
         if o in ("--visualize",):
             d['visualize'] = a
+        elif o in ("--game",):
+            d['game'] = a
+        elif o in ("--reshape",):
+            d['reshape'] = a
         elif o in ("--record_dir",):
             d['record_dir'] = a
         elif o in ("--weights_dir",):

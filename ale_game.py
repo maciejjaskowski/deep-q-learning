@@ -3,34 +3,37 @@ import numpy as np
 from skimage import measure
 
 
-def init(display_screen=False, record_dir=None):
+def init(game, display_screen=False, record_dir=None):
     if display_screen:
         import pygame
         pygame.init()
-    rom_path = '.'
     ale = ALEInterface()
     ale.setBool('display_screen', display_screen)
     ale.setInt('random_seed', 123)
     if record_dir is not None:
         ale.setString("record_screen_dir", record_dir)
-    ale.loadROM(rom_path + '/space_invaders.bin')
+    ale.loadROM('{game}.bin'.format(game=game))
     ale.setFloat("repeat_action_probability", 0)
 
     return ale
 
 
 class Phi(object):
-    def __init__(self, skip_every):
+    def __init__(self, skip_every, reshape):
         self.prev_cropped = np.zeros((80, 80), dtype=np.uint8)
         self.prev_frames = [np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8), np.zeros((80, 80), dtype=np.uint8)]
         self.frame_count = -1
         self.skip_every = skip_every
+        self.reshape = reshape
 
     def __call__(self, state):
         self.frame_count += 1
-
-        #cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
-        cropped = measure.block_reduce((np.reshape(state, (210, 160))[40:-10, :]), (2, 2), func=np.mean).astype(dtype=np.int8)
+        if self.reshape == "max":
+            cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
+        elif self.reshape == "mean":
+            cropped = measure.block_reduce((np.reshape(state, (210, 160))[40:-10, :]), (2, 2), func=np.mean).astype(dtype=np.int8)
+        else:
+            raise RuntimeError("Unknown reshape method: {reshape}".format(reshape=self.reshape))
 
         if self.frame_count % self.skip_every == self.skip_every - 1:
             frame = np.maximum(cropped, self.prev_cropped)
@@ -79,14 +82,7 @@ class SpaceInvadersGameCombined2Visualizer:
         pass
 
 
-class SpaceInvadersGame(object):
-
-# 0 nothing
-# 1 ^
-# 2 ->
-# 3 <-
-# 4 -> and ^
-# 5 <- and ^
+class ALEGame(object):
 
     def __init__(self, ale):
         self.ale = ale
@@ -104,7 +100,6 @@ class SpaceInvadersGame(object):
         if self.ale.game_over():
             self.finished = True
             self.ale.reset_game()
-
 
         self.state = np.dot(self.ale.getScreenRGB(), np.array([0.2126, 0.7152, 0.0722])).astype(np.int8)
 
