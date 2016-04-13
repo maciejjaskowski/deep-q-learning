@@ -148,7 +148,7 @@ class DQNAlgo:
 
         if random.random() < self.epsilon:
             action = random.randint(0, self.n_actions - 1)
-            print("{i_frame} | random action: {action}".format(i_frame=self.i_frames, action=action))
+            #print("{i_frame} | random action: {action}".format(i_frame=self.i_frames, action=action))
             return action
         else:
             return self._best_action()
@@ -157,7 +157,7 @@ class DQNAlgo:
         q = self.forward(self.state)
         self.last_q = np.max(q)
         action = np.argmax(q)
-        print("{i_frame} | q: {q} | action: {action}".format(i_frame=self.i_frames, q=q, action=action))
+#        print("{i_frame} | q: {q} | action: {action}".format(i_frame=self.i_frames, q=q, action=action))
         return action
 
     def feedback(self, exp):

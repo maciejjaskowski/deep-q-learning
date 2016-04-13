@@ -233,7 +233,7 @@ if __name__ == "__main__":
         elif o in ("--show_mood",):
             if a == 'plot':
                 d["show_mood"] = Plot
-            else:
+            elif a == "log":
                 d["show_mood"] = Log
         elif o in ("--dqn.no_replay",):
             d["dqn.no_replay"] = True
