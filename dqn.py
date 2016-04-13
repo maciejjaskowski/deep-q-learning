@@ -42,7 +42,8 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, build_network, updates, initial_weights_file=None):
+    def __init__(self, n_actions, replay_memory, build_network, updates, screen_size, initial_weights_file=None):
+        self.screen_size = screen_size
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
@@ -80,11 +81,13 @@ class DQNAlgo:
         self.n_actions = n_actions
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
-        self.network = build_network(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256))
+        self.network = build_network(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256),
+                                     screen_size=self.screen_size)
         print("Compiling forward.")
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
-        self.network_stale = build_network(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256))
+        self.network_stale = build_network(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256),
+                                           screen_size=self.screen_size)
         print("Compiling forward_stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
@@ -129,9 +132,8 @@ class DQNAlgo:
         print("{i_frame} | Updating stale network.".format(i_frame=self.i_frames))
         lasagne.layers.set_all_param_values(self.network_stale, lasagne.layers.get_all_param_values(self.network))
 
-    @staticmethod
-    def _prep_state(state):
-        return np.reshape(np.stack(state, axis=0), (1, 4, 80, 80))
+    def _prep_state(self, state):
+        return np.reshape(np.stack(state, axis=0), (1, 4, self.screen_size, self.screen_size))
 
     def action(self):
         import random
@@ -183,7 +185,7 @@ class DQNAlgo:
         if len(self.replay_memory) > self.replay_start_size and self.i_frames % 4 == 0:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
 
-            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
+            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_size, self.screen_size)
 
             a0 = np.array(sample[1], dtype=np.int8).reshape(self.minibatch_size, self.n_actions)
 
@@ -191,7 +193,7 @@ class DQNAlgo:
 
             future_reward_indicators = np.array(sample[3], dtype=np.int8).reshape(self.minibatch_size, 1)
 
-            s1 = np.array(sample[4], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, 80, 80)
+            s1 = np.array(sample[4], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_size, self.screen_size)
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 

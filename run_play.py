@@ -4,8 +4,10 @@ import network
 d = run.d
 d['game'] = 'breakout'
 d['reshape'] = 'mean'
+d['phi'] = 'phi2'
+d['screen_size'] = 84
 d['dqn.no_replay'] = True
-d['visualize'] = 'ale'
+d['visualize'] = 'q'
 d['dqn.network'] = network.build_nature_with_pad
 d['dqn.replay_start_size'] = 100
 d['dqn.log_frequency'] = 1

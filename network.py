@@ -4,11 +4,11 @@ from __future__ import division
 import lasagne
 
 
-def build_nature_dnn(n_actions, input_var):
+def build_nature_dnn(n_actions, input_var, screen_size):
     from lasagne.layers import dnn
 
     l_in = lasagne.layers.InputLayer(
-        shape=(32, 4, 80, 80),
+        shape=(32, 4, screen_size, screen_size),
         input_var=input_var
     )
 
@@ -61,8 +61,8 @@ def build_nature_dnn(n_actions, input_var):
     return l_out
 
 
-def build_nature_with_pad(n_actions, input_var=None):
-    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+def build_nature_with_pad(n_actions, input_var, screen_size):
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -97,8 +97,8 @@ def build_nature_with_pad(n_actions, input_var=None):
     return network
 
 
-def build_nature_with_pad2(n_actions, input_var=None):
-    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+def build_nature_with_pad2(n_actions, input_var, screen_size):
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -137,8 +137,8 @@ def build_nature_with_pad2(n_actions, input_var=None):
     return network
 
 
-def build_nature_with_pad3(n_actions, input_var=None):
-    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+def build_nature_with_pad3(n_actions, input_var, screen_size):
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -177,8 +177,8 @@ def build_nature_with_pad3(n_actions, input_var=None):
     return network
 
 
-def build_nature(n_actions, input_var=None):
-    network = lasagne.layers.InputLayer(shape=(None, 4, 80, 80),
+def build_nature(n_actions, input_var, screen_size):
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -213,8 +213,8 @@ def build_nature(n_actions, input_var=None):
     return network
 
 
-def build_nips(n_actions, input_var):
-    network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),
+def build_nips(n_actions, input_var, screen_size):
+    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -241,10 +241,10 @@ def build_nips(n_actions, input_var):
     return network
 
 
-def build_nips_dnn(n_actions, input_var):
+def build_nips_dnn(n_actions, input_var, screen_size):
     from lasagne.layers import dnn
 
-    network = lasagne.layers.InputLayer(shape=(32, 4, 80, 80),
+    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size, screen_size),
                                         input_var=input_var)
 
     network = dnn.Conv2DDNNLayer(

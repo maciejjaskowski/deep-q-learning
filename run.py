@@ -40,12 +40,20 @@ def main(**kargs):
         return game
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
-    # dqn_algo = q.ConstAlgo([3])
+
+    if kargs['phi'] == 'phi':
+        phi = ag.Phi(skip_every=4, reshape=kargs['reshape'])
+    elif kargs['phi'] == 'phi2':
+        phi = ag.Phi2(skip_every=4, reshape=kargs['reshape'])
+    else:
+        raise RuntimeError("Unknown phi: {phi}".format(phi=kargs['phi']))
+
     dqn_algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
                            initial_weights_file=initial_weights_file,
                            build_network=kargs['dqn.network'],
-                           updates=kargs['dqn.updates'])
+                           updates=kargs['dqn.updates'],
+                           screen_size=phi.screen_size)
 
     dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
     dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
@@ -74,9 +82,9 @@ def main(**kargs):
 
     print(str(dqn_algo))
 
-    visualizer = ag.SpaceInvadersGameCombined2Visualizer() if kargs['visualize'] == 'q' else q.GameNoVisualizer()
+    visualizer = ag.SpaceInvadersGameCombined2Visualizer(phi.screen_size) if kargs['visualize'] == 'q' else q.GameNoVisualizer()
     teacher = q.Teacher(new_game, dqn_algo, visualizer,
-                        ag.Phi(skip_every=4, reshape=kargs['reshape']), repeat_action=4, sleep_seconds=0)
+                        phi, repeat_action=4, sleep_seconds=0)
     teacher.teach(500000)
 
 
@@ -158,6 +166,7 @@ def const_on_space_invaders():
 
 d = {
     'game': 'space_invaders',
+    'phi': 'phi',
     'reshape': 'max',
     'visualize': False,
     'record_dir': None,
@@ -180,6 +189,7 @@ if __name__ == "__main__":
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'game=',
         'reshape=',
+        'phi=',
         'visualize=',
         'record_dir=',
         'dqn.replay_start_size=',
@@ -201,6 +211,8 @@ if __name__ == "__main__":
             d['game'] = a
         elif o in ("--reshape",):
             d['reshape'] = a
+        elif o in ("--phi",):
+            d['phi'] = a
         elif o in ("--record_dir",):
             d['record_dir'] = a
         elif o in ("--weights_dir",):
