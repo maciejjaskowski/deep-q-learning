@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class SimpleBreakoutVisualizer:
     def __init__(self, algo):
@@ -38,7 +39,6 @@ class SimpleBreakout(object):
     def __init__(self):
         self.action_set = [4, 7, 10]
         self.reset_game()
-        import random
         self.bar = [random.randint(0, 11), 10]
         self.h = 12
         self.w = 12
@@ -49,10 +49,10 @@ class SimpleBreakout(object):
                             np.zeros((self.h, self.w), dtype=np.uint8)]
 
     def reset_game(self):
-        import random
         self.finished = False
         self.ball = [random.randint(0, 11), 0]
         self.cum_reward = 0
+        self.bar = [random.randint(0, 11), 11]
 
     def n_actions(self):
         return len(self.action_set)
@@ -71,13 +71,10 @@ class SimpleBreakout(object):
         if self.ball[1] == 11:
             if abs(self.ball[0] - self.bar[0]) <= 1:
                 action_reward = 1
-                self.reset_game()
+                self.ball = [random.randint(0, 11), 0]
             else:
                 game_over = True
                 lol = True
-                self.reset_game()
-                import random
-                self.bar = [random.randint(0,11), 11]
 
         self.cum_reward += action_reward
         self.prev_frames = self.prev_frames[1:]

@@ -110,13 +110,10 @@ def build_simple_breakout(n_actions, input_var, screen_size):
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
-        network, num_filters=8, filter_size=(3, 3), stride=1,
+        network, num_filters=4, filter_size=(3, 3), stride=1, pad=1,
         nonlinearity=lasagne.nonlinearities.rectify,
         W=lasagne.init.GlorotUniform())
 
-    network = lasagne.layers.Conv2DLayer(
-        network, num_filters=16, filter_size=(2, 2), stride=1,
-        nonlinearity=lasagne.nonlinearities.rectify)
 
     network = lasagne.layers.DenseLayer(
         network,

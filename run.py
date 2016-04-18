@@ -57,6 +57,7 @@ def main(**kargs):
 
     algo.log_frequency = kargs['dqn.log_frequency']
     algo.target_network_update_frequency = kargs['target_network_update_frequency']
+    algo.final_exploration_frame = kargs['final_exploration_frame']
 
 
     import Queue
@@ -94,7 +95,8 @@ def main(**kargs):
                         i_total_action=i_total_action,
                         total_n_actions=50000000,
                         max_actions_per_game=10000,
-                        skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'])
+                        skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'],
+                        run_test_every_n=kargs['run_test_every_n'])
     teacher.teach()
 
 
@@ -171,7 +173,8 @@ d = {
     'dqn.updates': lasagne.updates.rmsprop,
     'repeat_action': 4,
     'skip_n_frames_after_lol': 30,
-    'target_network_update_frequency': 10000
+    'target_network_update_frequency': 10000,
+    'final_exploration_frame': 1000000
      }
 
 if __name__ == "__main__":
