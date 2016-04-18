@@ -255,4 +255,4 @@ def build_loss(out, out_stale, a0_var, r0_var, future_reward_indicator_var, gamm
     quadratic_part = T.minimum(abs(err), 1)
     linear_part = abs(err) - quadratic_part
     loss = 0.5 * quadratic_part ** 2 + linear_part
-    return T.sum(loss), loss, y, q
+    return T.mean(loss), loss, y, q
