@@ -4,7 +4,7 @@ import dqn
 import theano
 import lasagne
 import network
-
+import simple_breakout
 
 def latest(dir='.'):
     if dir == None:
@@ -28,64 +28,73 @@ def main(**kargs):
         theano.config.exception_verbosity = 'high'
         theano.config.optimizer = 'fast_compile'
 
-    ale = ag.init(game=kargs['game'], display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
-    game = ag.ALEGame(ale)
+    if kargs['game'] == 'simple_breakout':
+        game = simple_breakout.SimpleBreakout()
+        class P(object):
+            def __init__(self):
+                self.screen_size = 12
 
-
-    def new_game():
-        game.ale.reset_game()
-        game.finished = False
-        game.cum_reward = 0
-        return game
+            def __call__(self, frames):
+                return frames
+        phi = P()
+    else:
+        ale = ag.init(game=kargs['game'], display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
+        game = ag.ALEGame(ale)
+        phi = ag.Phi()
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
-
-    phi = ag.Phi()
-
-    dqn_algo = dqn.DQNAlgo(game.n_actions(),
+    algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
                            initial_weights_file=initial_weights_file,
                            build_network=kargs['dqn.network'],
                            updates=kargs['dqn.updates'],
                            screen_size=phi.screen_size)
 
-    dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
-    dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
-    dqn_algo.initial_epsilon = kargs['dqn.initial_epsilon']
-    dqn_algo.i_action = i_total_action
+    algo.replay_start_size = kargs['dqn.replay_start_size']
+    algo.final_epsilon = kargs['dqn.final_epsilon']
+    algo.initial_epsilon = kargs['dqn.initial_epsilon']
+    algo.i_action = i_total_action
 
-    dqn_algo.log_frequency = kargs['dqn.log_frequency']
+    algo.log_frequency = kargs['dqn.log_frequency']
+    algo.target_network_update_frequency = kargs['target_network_update_frequency']
 
 
     import Queue
-    dqn_algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
+    algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
 
     if kargs['show_mood'] is not None:
         plot = kargs['show_mood']()
 
         def worker():
             while True:
-                item = dqn_algo.mood_q.get()
+                item = algo.mood_q.get()
                 plot.show(item)
-                dqn_algo.mood_q.task_done()
+                algo.mood_q.task_done()
 
         import threading
         t = threading.Thread(target=worker)
         t.daemon = True
         t.start()
 
-    print(str(dqn_algo))
+    print(str(algo))
 
-    visualizer = ag.SpaceInvadersGameCombined2Visualizer(phi.screen_size) if kargs['visualize'] == 'q' else q.GameNoVisualizer()
-    teacher = q.Teacher(new_game=new_game,
-                        algo=dqn_algo,
+    if kargs['visualize'] != 'q':
+        visualizer = q.GameNoVisualizer()
+    else:
+        if kargs['game'] == 'simple_breakout':
+            visualizer = simple_breakout.SimpleBreakoutVisualizer(algo)
+        else:
+            visualizer = ag.ALEGameVisualizer(phi.screen_size)
+
+    teacher = q.Teacher(game=game,
+                        algo=algo,
                         game_visualizer=visualizer,
                         phi=phi,
-                        repeat_action=4,
+                        repeat_action=kargs['repeat_action'],
                         i_total_action=i_total_action,
                         total_n_actions=50000000,
                         max_actions_per_game=10000,
-                        skip_n_frames_after_lol=30)
+                        skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'])
     teacher.teach()
 
 
@@ -143,27 +152,6 @@ class Plot(object):
             self.fig.canvas.flush_events()
 
 
-def const_on_space_invaders():
-    import teacher as q
-    import ale_game as ag
-    import dqn
-    reload(q)
-    reload(ag)
-    reload(dqn)
-
-    ale = ag.init()
-    game = ag.ALEGame(ale)
-
-    def new_game():
-        game.ale.reset_game()
-        game.finished = False
-        game.cum_reward = 0
-        return game
-
-    const_algo = q.ConstAlgo([2, 2, 2, 2, 2, 0, 0, 0, 0])
-    teacher = q.Teacher(new_game, const_algo, ag.SpaceInvadersGameCombined2Visualizer(),
-                        ag.Phi(skip_every=6), repeat_action=6, reshape="max")
-    teacher.teach(1)
 
 d = {
     'game': 'space_invaders',
@@ -180,7 +168,10 @@ d = {
     'dqn.replay_memory_size': 400000,
     'dqn.no_replay': False,
     'dqn.network': network.build_nature,
-    'dqn.updates': lasagne.updates.rmsprop
+    'dqn.updates': lasagne.updates.rmsprop,
+    'repeat_action': 4,
+    'skip_n_frames_after_lol': 30,
+    'target_network_update_frequency': 10000
      }
 
 if __name__ == "__main__":

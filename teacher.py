@@ -47,12 +47,12 @@ class ConstAlgo:
 
 
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action,
+    def __init__(self, game, algo, game_visualizer, phi, repeat_action,
                  i_total_action,
                  total_n_actions,
                  max_actions_per_game,
                  skip_n_frames_after_lol):
-        self.new_game = new_game
+        self.game = game
         self.algo = algo
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
@@ -64,37 +64,36 @@ class Teacher:
 
     def teach(self):
         while self.i_total_action < self.total_n_actions:
+            self.game.reset_game()
+            self.algo.init_state(self.phi(self.game.get_state()))
             self.single_episode()
+            self.game_visualizer.next_game()
 
     def single_episode(self):
-        game = self.new_game()
-        self.algo.init_state(self.phi(game.get_state()))
 
         i_action = 0
-        while not game.finished and i_action < self.max_actions_per_game:
+        while not self.game.finished and i_action < self.max_actions_per_game:
             i_action += 1
-            self.single_action(game)
+            self.single_action()
 
-        if game.finished:
+        if self.game.finished:
             print "Finished after ", i_action, " actions"
         else:
             print "Failure."
 
-        print "Game reward: " + str(game.cum_reward)
+        print "Game reward: " + str(self.game.cum_reward)
         print ""
 
-        self.game_visualizer.next_game()
-
-    def single_action(self, game):
+    def single_action(self):
 
         action = self.algo.action()
 
         import numpy as np
-        old_state = self.phi(game.get_state())
-        rewards, lols = zip(*[game.input(action) for _ in range(self.repeat_action)])
+        old_state = self.phi(self.game.get_state())
+        rewards, lols = zip(*[self.game.input(action) for _ in range(self.repeat_action)])
         rep_reward = np.sum(rewards)
         lol = np.any(lols)
-        new_state = self.phi(game.get_state())
+        new_state = self.phi(self.game.get_state())
 
         exp = Experience(old_state, action, rep_reward, new_state, lol)
         self.algo.feedback(exp)
@@ -103,6 +102,6 @@ class Teacher:
 
         if lol:
             for _ in range(self.skip_n_frames_after_lol):
-                game.input(action)
+                self.game.input(action)
 
         self.game_visualizer.show(new_state)
