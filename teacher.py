@@ -47,31 +47,36 @@ class ConstAlgo:
 
 
 class Teacher:
-    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action=1, sleep_seconds=0):
+    def __init__(self, new_game, algo, game_visualizer, phi, repeat_action,
+                 i_total_action,
+                 total_n_actions,
+                 max_actions_per_game,
+                 skip_n_frames_after_lol):
         self.new_game = new_game
         self.algo = algo
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
         self.phi = phi
-        self.skip_n_frames_after_lol = 30
+        self.skip_n_frames_after_lol = skip_n_frames_after_lol
+        self.total_n_actions = total_n_actions
+        self.i_total_action = i_total_action
+        self.max_actions_per_game = max_actions_per_game
 
-    def teach(self, episodes):
-        return [self.single_episode(15000) for i in range(episodes)]
+    def teach(self):
+        while self.i_total_action < self.total_n_actions:
+            self.single_episode()
 
-    def single_episode(self, n_steps=float("inf")):
+    def single_episode(self):
         game = self.new_game()
         self.algo.init_state(self.phi(game.get_state()))
 
-        i_steps = 0
-
-        while not game.finished and i_steps < n_steps:
-            i_steps += 1
-            exp, elapsed_time = self.single_step(game)
-            if i_steps % 10000 < 10:
-                print("elapsed time: {elapsed_time}".format(elapsed_time=elapsed_time))
+        i_action = 0
+        while not game.finished and i_action < self.max_actions_per_game:
+            i_action += 1
+            self.single_action(game)
 
         if game.finished:
-            print "Finished after ", i_steps, " steps"
+            print "Finished after ", i_action, " actions"
         else:
             print "Failure."
 
@@ -80,11 +85,7 @@ class Teacher:
 
         self.game_visualizer.next_game()
 
-        return i_steps, game.cum_reward
-
-    def single_step(self, game):
-        import time
-        time_start = time.time()
+    def single_action(self, game):
 
         action = self.algo.action()
 
@@ -105,7 +106,3 @@ class Teacher:
                 game.input(action)
 
         self.game_visualizer.show(new_state)
-
-        time_end = time.time()
-
-        return exp, time_end - time_start

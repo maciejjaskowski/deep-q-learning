@@ -19,9 +19,9 @@ def latest(dir='.'):
 
 
 def main(**kargs):
-    initial_weights_file, initial_i_frame = latest(kargs['weights_dir'])
+    initial_weights_file, i_total_action = latest(kargs['weights_dir'])
 
-    print("Continuing using weights from file: ", initial_weights_file, "from", initial_i_frame)
+    print("Continuing using weights from file: ", initial_weights_file, "from", i_total_action)
 
     if kargs['theano_verbose']:
         theano.config.compute_test_value = 'warn'
@@ -36,12 +36,11 @@ def main(**kargs):
         game.ale.reset_game()
         game.finished = False
         game.cum_reward = 0
-        game.lives = 4
         return game
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
 
-    phi = ag.Phi3()
+    phi = ag.Phi()
 
     dqn_algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
@@ -53,9 +52,9 @@ def main(**kargs):
     dqn_algo.replay_start_size = kargs['dqn.replay_start_size']
     dqn_algo.final_epsilon = kargs['dqn.final_epsilon']
     dqn_algo.initial_epsilon = kargs['dqn.initial_epsilon']
-    dqn_algo.i_frames = initial_i_frame
+    dqn_algo.i_action = i_total_action
 
-    dqn_algo.log_frequency=kargs['dqn.log_frequency']
+    dqn_algo.log_frequency = kargs['dqn.log_frequency']
 
 
     import Queue
@@ -78,9 +77,16 @@ def main(**kargs):
     print(str(dqn_algo))
 
     visualizer = ag.SpaceInvadersGameCombined2Visualizer(phi.screen_size) if kargs['visualize'] == 'q' else q.GameNoVisualizer()
-    teacher = q.Teacher(new_game, dqn_algo, visualizer,
-                        phi, repeat_action=4, sleep_seconds=0)
-    teacher.teach(500000)
+    teacher = q.Teacher(new_game=new_game,
+                        algo=dqn_algo,
+                        game_visualizer=visualizer,
+                        phi=phi,
+                        repeat_action=4,
+                        i_total_action=i_total_action,
+                        total_n_actions=50000000,
+                        max_actions_per_game=10000,
+                        skip_n_frames_after_lol=30)
+    teacher.teach()
 
 
 class Log(object):

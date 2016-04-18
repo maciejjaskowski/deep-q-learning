@@ -1,8 +1,8 @@
 from __future__ import division
 from ale_python_interface import ALEInterface
 import numpy as np
-from skimage import measure
 import skimage.transform
+
 
 def init(game, display_screen=False, record_dir=None):
     if display_screen:
@@ -19,7 +19,7 @@ def init(game, display_screen=False, record_dir=None):
     return ale
 
 
-class Phi3(object):
+class Phi(object):
 
     def __init__(self):
         self.screen_size = 84
@@ -42,82 +42,6 @@ class Phi3(object):
         # Central crop to 224x224
         h, w = im.shape
         return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
-
-
-class Phi2(object):
-
-    def __init__(self, skip_every, reshape):
-        self.screen_size = 84
-        self.prev_cropped = np.zeros((self.screen_size, self.screen_size), dtype=np.uint8)
-        self.prev_frames = [np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8)]
-        self.frame_count = -1
-        self.skip_every = skip_every
-        self.reshape = reshape
-        if reshape != "mean":
-            raise RuntimeError("Unknown reshape method: {reshape} for Phi2".format(reshape=self.reshape))
-
-    def __call__(self, state):
-        self.frame_count += 1
-        cropped = self.resize_and_crop(state)
-
-        if self.frame_count % self.skip_every == self.skip_every - 1:
-            frame = np.maximum(cropped, self.prev_cropped)
-            self.prev_frames.append(frame)
-            self.prev_frames = self.prev_frames[1:]
-            self.prev_cropped = cropped
-            return tuple(self.prev_frames)  # deepcopy would be slower
-        else:
-            self.prev_cropped = cropped
-            return tuple(self.prev_frames)
-
-    @staticmethod
-    def resize_and_crop(im):
-        # Resize so smallest dim = 256, preserving aspect ratio
-        im = im[40:-10, :]
-        h, w = im.shape
-        if h < w:
-            im = skimage.transform.resize(im, (84, w*84//h), preserve_range=True)
-        else:
-            im = skimage.transform.resize(im, (h*84//w, 84), preserve_range=True)
-
-        # Central crop to 224x224
-        h, w = im.shape
-        return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
-
-
-class Phi(object):
-    def __init__(self, skip_every, reshape):
-        self.screen_size = 80
-        self.prev_cropped = np.zeros((self.screen_size, self.screen_size), dtype=np.uint8)
-        self.prev_frames = [np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8),
-                            np.zeros((self.screen_size, self.screen_size), dtype=np.uint8)]
-        self.frame_count = -1
-        self.skip_every = skip_every
-        self.reshape = reshape
-
-    def __call__(self, state):
-        self.frame_count += 1
-        if self.reshape == "max":
-            cropped = measure.block_reduce((np.reshape(state, (210, 160))[35:-15, :]), (2, 2), func=np.max)
-        elif self.reshape == "mean":
-            cropped = measure.block_reduce((np.reshape(state, (210, 160))[40:-10, :]), (2, 2), func=np.mean).astype(dtype=np.int8)
-        else:
-            raise RuntimeError("Unknown reshape method: {reshape}".format(reshape=self.reshape))
-
-        if self.frame_count % self.skip_every == self.skip_every - 1:
-            frame = np.maximum(cropped, self.prev_cropped)
-            self.prev_frames.append(frame)
-            self.prev_frames = self.prev_frames[1:]
-            self.prev_cropped = cropped
-            return tuple(self.prev_frames)  # deepcopy would be slower
-        else:
-            self.prev_cropped = cropped
-            return tuple(self.prev_frames)
 
 
 class SpaceInvadersGameCombined2Visualizer:

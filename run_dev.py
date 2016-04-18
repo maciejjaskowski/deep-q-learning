@@ -4,7 +4,7 @@ import network
 d = run.d
 d['game'] = 'space_invaders'
 d['reshape'] = 'mean'
-d['dqn.no_replay'] = True
+#d['dqn.no_replay'] = True
 d['visualize'] = 'q'
 d['dqn.replay_start_size'] = 100
 d['show_mood'] = run.Log
