@@ -41,12 +41,7 @@ def main(**kargs):
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
 
-    if kargs['phi'] == 'phi':
-        phi = ag.Phi(skip_every=4, reshape=kargs['reshape'])
-    elif kargs['phi'] == 'phi2':
-        phi = ag.Phi2(skip_every=4, reshape=kargs['reshape'])
-    else:
-        raise RuntimeError("Unknown phi: {phi}".format(phi=kargs['phi']))
+    phi = ag.Phi3()
 
     dqn_algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
@@ -166,7 +161,6 @@ def const_on_space_invaders():
 
 d = {
     'game': 'space_invaders',
-    'phi': 'phi',
     'reshape': 'max',
     'visualize': False,
     'record_dir': None,
@@ -177,7 +171,7 @@ d = {
     'dqn.initial_epsilon': 1,
     'dqn.final_epsilon': 0.1,
     'dqn.log_frequency': 1,
-    'dqn.replay_memory_size': 500000,
+    'dqn.replay_memory_size': 400000,
     'dqn.no_replay': False,
     'dqn.network': network.build_nature,
     'dqn.updates': lasagne.updates.rmsprop
@@ -189,7 +183,6 @@ if __name__ == "__main__":
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'game=',
         'reshape=',
-        'phi=',
         'visualize=',
         'record_dir=',
         'dqn.replay_start_size=',
@@ -211,8 +204,6 @@ if __name__ == "__main__":
             d['game'] = a
         elif o in ("--reshape",):
             d['reshape'] = a
-        elif o in ("--phi",):
-            d['phi'] = a
         elif o in ("--record_dir",):
             d['record_dir'] = a
         elif o in ("--weights_dir",):

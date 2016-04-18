@@ -19,6 +19,31 @@ def init(game, display_screen=False, record_dir=None):
     return ale
 
 
+class Phi3(object):
+
+    def __init__(self):
+        self.screen_size = 84
+
+    def __call__(self, frames):
+        last = frames[3:16:4]
+        sec_last = frames[2:16:4]
+        return [self.resize_and_crop(img) for img in np.max([last, sec_last], axis=0)]
+
+    @staticmethod
+    def resize_and_crop(im):
+        # Resize so smallest dim = 256, preserving aspect ratio
+        im = im[40:-10, :]
+        h, w = im.shape
+        if h < w:
+            im = skimage.transform.resize(im, (84, w*84//h), preserve_range=True)
+        else:
+            im = skimage.transform.resize(im, (h*84//w, 84), preserve_range=True)
+
+        # Central crop to 224x224
+        h, w = im.shape
+        return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
+
+
 class Phi2(object):
 
     def __init__(self, skip_every, reshape):
@@ -130,26 +155,47 @@ class ALEGame(object):
         self.ale = ale
         self.finished = False
         self.cum_reward = 0
-        self.state = np.mean(ale.getScreenRGB(), axis=2, dtype=np.uint8)
         self.action_set = self.ale.getMinimalActionSet()
-        self.lives = self.ale.lives()
+
+        self.h = 210
+        self.w = 160
+
+        self.prev_frames = [np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8),
+                            np.zeros((self.h, self.w), dtype=np.uint8), ]
 
     def n_actions(self):
         return len(self.action_set)
 
     def input(self, action):
-        self.cum_reward += self.ale.act(self.action_set[action])
+        lives_before = self.ale.lives()
+        action_reward = self.ale.act(self.action_set[action])
+        self.cum_reward += action_reward
+
         if self.ale.game_over():
             self.finished = True
             self.ale.reset_game()
 
-        self.state = np.dot(self.ale.getScreenRGB(), np.array([0.2126, 0.7152, 0.0722])).astype(np.int8)
+        self.prev_frames.append(np.dot(self.ale.getScreenRGB(), np.array([0.2126, 0.7152, 0.0722])).astype(np.int8))
+        self.prev_frames = self.prev_frames[1:]
 
-        if self.lives != self.ale.lives():
-            self.lives = self.ale.lives()
-            return 40
-        else:
-            return 0
+        return action_reward, lives_before != self.ale.lives()
 
     def get_state(self):
-        return self.state
+        return self.prev_frames

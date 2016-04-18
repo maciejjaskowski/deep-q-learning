@@ -53,16 +53,14 @@ class Teacher:
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
         self.phi = phi
-        self.old_state = None
-        self.sleep_seconds = sleep_seconds
+        self.skip_n_frames_after_lol = 30
 
     def teach(self, episodes):
         return [self.single_episode(15000) for i in range(episodes)]
 
     def single_episode(self, n_steps=float("inf")):
         game = self.new_game()
-        self.old_state = self.phi(game.get_state())
-        self.algo.init_state(self.old_state)
+        self.algo.init_state(self.phi(game.get_state()))
 
         i_steps = 0
 
@@ -87,31 +85,26 @@ class Teacher:
     def single_step(self, game):
         import time
         time_start = time.time()
-        old_cum_reward = game.cum_reward
 
         action = self.algo.action()
 
-        new_state = None
-        skip_because_of_loss_of_life = 0
-        for i in range(self.repeat_action):
-            skip_because_of_loss_of_life = max(skip_because_of_loss_of_life, game.input(action))
-            new_state = self.phi(game.get_state())
+        import numpy as np
+        old_state = self.phi(game.get_state())
+        rewards, lols = zip(*[game.input(action) for _ in range(self.repeat_action)])
+        rep_reward = np.sum(rewards)
+        lol = np.any(lols)
+        new_state = self.phi(game.get_state())
 
-        exp = Experience(self.old_state, action, game.cum_reward - old_cum_reward, new_state, game.finished or (skip_because_of_loss_of_life > 0))
+        exp = Experience(old_state, action, rep_reward, new_state, lol)
         self.algo.feedback(exp)
 
         self.game_visualizer.show(new_state)
 
-        for i in range(skip_because_of_loss_of_life):
-            game.input(action)
-            new_state = self.phi(game.get_state())
+        if lol:
+            for _ in range(self.skip_n_frames_after_lol):
+                game.input(action)
 
-
-        self.old_state = new_state
         self.game_visualizer.show(new_state)
-        if self.sleep_seconds != 0:
-            import time
-            time.sleep(self.sleep_seconds)
 
         time_end = time.time()
 

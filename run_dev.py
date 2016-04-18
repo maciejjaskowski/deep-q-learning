@@ -3,7 +3,6 @@ import network
 
 d = run.d
 d['game'] = 'space_invaders'
-d['phi'] = 'phi2'
 d['reshape'] = 'mean'
 d['dqn.no_replay'] = True
 d['visualize'] = 'q'
