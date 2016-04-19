@@ -44,7 +44,7 @@ class Phi(object):
         return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
 
 
-class SpaceInvadersGameCombined2Visualizer:
+class ALEGameVisualizer:
     def __init__(self, screen_size):
         import pygame
         self.screen_size = screen_size
@@ -104,6 +104,11 @@ class ALEGame(object):
                             np.zeros((self.h, self.w), dtype=np.uint8),
                             np.zeros((self.h, self.w), dtype=np.uint8), ]
 
+    def reset_game(self):
+        self.ale.reset_game()
+        self.finished = False
+        self.cum_reward = 0
+
     def n_actions(self):
         return len(self.action_set)
 
@@ -114,7 +119,6 @@ class ALEGame(object):
 
         if self.ale.game_over():
             self.finished = True
-            self.ale.reset_game()
 
         self.prev_frames.append(np.dot(self.ale.getScreenRGB(), np.array([0.2126, 0.7152, 0.0722])).astype(np.int8))
         self.prev_frames = self.prev_frames[1:]

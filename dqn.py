@@ -119,6 +119,8 @@ class DQNAlgo:
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
 
+        self.test_mode = False
+
     def log(self, *args):
         if self.i_action % 10000 < self.log_frequency:
             print(self.i_action, *args)
@@ -135,32 +137,38 @@ class DQNAlgo:
     def _prep_state(self, state):
         return np.reshape(np.stack(state, axis=0), (1, 4, self.screen_size, self.screen_size))
 
-    def action(self):
+    def action(self, _state):
         import random
-        self.log("{i_frame} | epsilon: {epsilon}".format(i_frame=self.i_action, epsilon=self.epsilon))
-        if self.i_action < self.final_exploration_frame:
-            if self.i_action % 10000 == 50:
-                self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
-                    self.i_action / self.final_exploration_frame) + self.initial_epsilon
-
+        if self.test_mode:
+            self.epsilon = 0.1
         else:
-            self.epsilon = self.final_epsilon
+
+            if self.i_action < self.final_exploration_frame:
+                if self.i_action % 10000 == 50:
+                    self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
+                        self.i_action / self.final_exploration_frame) + self.initial_epsilon
+
+            else:
+                self.epsilon = self.final_epsilon
+            self.log("{i_frame} | epsilon: {epsilon}".format(i_frame=self.i_action, epsilon=self.epsilon))
 
         if random.random() < self.epsilon:
             action = random.randint(0, self.n_actions - 1)
             #print("{i_frame} | random action: {action}".format(i_frame=self.i_frames, action=action))
             return action
         else:
-            return self._best_action()
+            return self._best_action(self._prep_state(_state))
 
-    def _best_action(self):
-        q = self.forward(self.state)
+    def _best_action(self, state):
+        q = self.forward(state)
         self.last_q = np.max(q)
         action = np.argmax(q)
 #        print("{i_frame} | q: {q} | action: {action}".format(i_frame=self.i_frames, q=q, action=action))
         return action
 
     def feedback(self, exp):
+        if self.test_mode:
+            return
         # exp -> s0 a0 r0 s1 game_over
         self.i_action += 1
         self.state = self._prep_state(exp.s1)
@@ -176,9 +184,9 @@ class DQNAlgo:
         if self.replay_memory is None:
             return
 
-        if exp.r0 != 0 or r0_clipped != 0:
-            print("{i_frame} | reward: {reward} | creward: {creward}"
-                  .format(i_frame=self.i_action, reward=exp.r0, creward=r0_clipped))
+        # if exp.r0 != 0 or r0_clipped != 0:
+        #     print("{i_frame} | reward: {reward} | creward: {creward}"
+        #           .format(i_frame=self.i_action, reward=exp.r0, creward=r0_clipped))
 
         self.replay_memory.append(self.a_lookup[exp.a0], r0_clipped, fri, self.state)
 
@@ -198,8 +206,6 @@ class DQNAlgo:
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
             self.n_parameter_updates += 1
-
-            print('{i_frame} | loss: '.format(i_frame=self.i_action), t[0])
 
             self.log('{i_frame} | loss_elems: '.format(i_frame=self.i_action), t[1])
             self.log('{i_frame} | y, q: '.format(i_frame=self.i_action), t[2], t[3])
