@@ -10,18 +10,16 @@ def latest(dir='.'):
     if dir == None:
         return None, 0
     import os, re
-    frames = [int(re.match(r"weights_([0-9]*).npz", file).groups()[0])
-             for file in os.listdir(dir) if file.startswith("weights_")]
+    frames = [int(re.match(r"epoch_([0-9]*).npz", file).groups()[0])
+             for file in os.listdir(dir) if file.startswith("epoch_")]
     if frames == None or len(frames) == 0:
         return None, 0
     else:
-        return dir + '/weights_' + str(max(frames)) + '.npz', max(frames)
+        return dir + '/epoch_' + str(max(frames)) + '.npz', max(frames)
 
 
 def main(**kargs):
-    initial_weights_file, i_total_action = latest(kargs['weights_dir'])
-
-    print("Continuing using weights from file: ", initial_weights_file, "from", i_total_action)
+    algo_initial_state_file, _ = latest(kargs['weights_dir'])
 
     if kargs['theano_verbose']:
         theano.config.compute_test_value = 'warn'
@@ -32,7 +30,7 @@ def main(**kargs):
         game = simple_breakout.SimpleBreakout()
         class P(object):
             def __init__(self):
-                self.screen_size = 12
+                self.screen_size = (12, 12)
 
             def __call__(self, frames):
                 return frames
@@ -43,61 +41,76 @@ def main(**kargs):
         phi = ag.Phi()
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
-    algo = dqn.DQNAlgo(game.n_actions(),
-                           replay_memory=replay_memory,
-                           initial_weights_file=initial_weights_file,
-                           build_network=kargs['dqn.network'],
-                           updates=kargs['dqn.updates'],
-                           screen_size=phi.screen_size)
 
-    algo.replay_start_size = kargs['dqn.replay_start_size']
-    algo.final_epsilon = kargs['dqn.final_epsilon']
-    algo.initial_epsilon = kargs['dqn.initial_epsilon']
-    algo.i_action = i_total_action
+    def create_algo():
+        algo = dqn.DQNAlgo(game.n_actions(),
+                               replay_memory=replay_memory,
+                               build_network=kargs['dqn.network'],
+                               updates=kargs['dqn.updates'],
+                               screen_size=phi.screen_size)
 
-    algo.log_frequency = kargs['dqn.log_frequency']
-    algo.target_network_update_frequency = kargs['target_network_update_frequency']
-    algo.final_exploration_frame = kargs['final_exploration_frame']
+        algo.replay_start_size = kargs['dqn.replay_start_size']
+        algo.final_epsilon = kargs['dqn.final_epsilon']
+        algo.initial_epsilon = kargs['dqn.initial_epsilon']
+
+        algo.log_frequency = kargs['dqn.log_frequency']
+        algo.target_network_update_frequency = kargs['target_network_update_frequency']
+        algo.final_exploration_frame = kargs['final_exploration_frame']
+        return algo
+
+    algo_train = create_algo()
+    algo_test = create_algo()
+    algo_test.final_epsilon = 0.1
+    algo_test.initial_epsilon = 0.1
+    algo_test.epsilon = 0.1
 
 
     import Queue
-    algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
+    algo_train.mood_q = Queue.Queue() if kargs['show_mood'] else None
 
     if kargs['show_mood'] is not None:
         plot = kargs['show_mood']()
 
         def worker():
             while True:
-                item = algo.mood_q.get()
+                item = algo_train.mood_q.get()
                 plot.show(item)
-                algo.mood_q.task_done()
+                algo_train.mood_q.task_done()
 
         import threading
         t = threading.Thread(target=worker)
         t.daemon = True
         t.start()
 
-    print(str(algo))
+    print(str(algo_train))
 
     if kargs['visualize'] != 'q':
         visualizer = q.GameNoVisualizer()
     else:
         if kargs['game'] == 'simple_breakout':
-            visualizer = simple_breakout.SimpleBreakoutVisualizer(algo)
+            visualizer = simple_breakout.SimpleBreakoutVisualizer(algo_train)
         else:
             visualizer = ag.ALEGameVisualizer(phi.screen_size)
 
     teacher = q.Teacher(game=game,
-                        algo=algo,
+                        algo=algo_train,
                         game_visualizer=visualizer,
                         phi=phi,
                         repeat_action=kargs['repeat_action'],
-                        i_total_action=i_total_action,
-                        total_n_actions=50000000,
-                        max_actions_per_game=10000,
+                        max_actions_per_game=100000000,
                         skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'],
-                        run_test_every_n=kargs['run_test_every_n'])
-    teacher.teach()
+                        tester=False)
+
+    tester = q.Teacher(game=game,
+                        algo=algo_test,
+                        game_visualizer=visualizer,
+                        phi=phi,
+                        repeat_action=kargs['repeat_action'],
+                        max_actions_per_game=100000000,
+                        skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'],
+                        tester=True)
+
+    q.teach_and_test(teacher, tester, n_epochs=20, algo_initial_state_file=algo_initial_state_file)
 
 
 class Log(object):
@@ -170,12 +183,11 @@ d = {
     'dqn.replay_memory_size': 400000,
     'dqn.no_replay': False,
     'dqn.network': network.build_nature,
-    'dqn.updates': lasagne.updates.rmsprop,
+    'dqn.updates': lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01),
     'repeat_action': 4,
     'skip_n_frames_after_lol': 30,
     'target_network_update_frequency': 10000,
     'final_exploration_frame': 1000000,
-    'run_test_every_n': 1000000000000000,
      }
 
 if __name__ == "__main__":

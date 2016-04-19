@@ -77,7 +77,7 @@ class ALEGame(object):
 
     def __init__(self, ale):
         self.ale = ale
-        self.finished = False
+        self.finished = True
         self.cum_reward = 0
         self.action_set = self.ale.getMinimalActionSet()
 

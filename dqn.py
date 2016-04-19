@@ -43,7 +43,7 @@ class ReplayMemory(object):
 
 class DQNAlgo:
     def __init__(self, n_actions, replay_memory, build_network, updates, screen_size, initial_weights_file=None):
-        self.screen_size = screen_size
+        self.screen_width, self.screen_height = screen_size
         self.mood_q = None
         self.last_q = 0
         self.n_parameter_updates = 0
@@ -82,21 +82,15 @@ class DQNAlgo:
         self.a_lookup = np.eye(self.n_actions, dtype=np.int8)
 
         self.network = build_network(n_actions=self.n_actions, input_var=T.cast(s0_var, 'float32') / np.float32(256),
-                                     screen_size=self.screen_size)
+                                     screen_size=(self.screen_height, self.screen_width))
         print("Compiling forward.")
         self.forward = theano.function([s0_var], lasagne.layers.get_output(self.network, deterministic=True))
 
         self.network_stale = build_network(n_actions=self.n_actions, input_var=T.cast(s1_var, 'float32') / np.float32(256),
-                                           screen_size=self.screen_size)
+                                           screen_size=(self.screen_height, self.screen_width))
         print("Compiling forward_stale.")
         self.forward_stale = theano.function([s1_var],
                                              lasagne.layers.get_output(self.network_stale, deterministic=True))
-
-        if initial_weights_file is not None:
-            with np.load(initial_weights_file) as initial_weights:
-                param_values = [initial_weights['arr_%d' % i] for i in range(len(initial_weights.files))]
-                lasagne.layers.set_all_param_values(self.network, param_values)
-            self.i_action -= self.replay_start_size
 
         self._update_network_stale()
 
@@ -119,7 +113,6 @@ class DQNAlgo:
         self.loss_fn = theano.function([s0_var, a0_var, r0_var, s1_var, future_reward_indicator_var],
                                        self.loss)
 
-        self.test_mode = False
 
     def log(self, *args):
         if self.i_action % 10000 < self.log_frequency:
@@ -131,26 +124,19 @@ class DQNAlgo:
             self.replay_memory.init_state(self.state)
 
     def _update_network_stale(self):
-        print("{i_frame} | Updating stale network.".format(i_frame=self.i_action))
         lasagne.layers.set_all_param_values(self.network_stale, lasagne.layers.get_all_param_values(self.network))
 
     def _prep_state(self, state):
-        return np.reshape(np.stack(state, axis=0), (1, 4, self.screen_size, self.screen_size))
+        return np.reshape(np.stack(state, axis=0), (1, 4, self.screen_width, self.screen_height))
 
     def action(self, _state):
         import random
-        if self.test_mode:
-            self.epsilon = 0.1
+        if self.i_action < self.final_exploration_frame:
+            self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
+                self.i_action / self.final_exploration_frame) + self.initial_epsilon
         else:
-
-            if self.i_action < self.final_exploration_frame:
-                if self.i_action % 10000 == 50:
-                    self.epsilon = (self.final_epsilon - self.initial_epsilon) * (
-                        self.i_action / self.final_exploration_frame) + self.initial_epsilon
-
-            else:
-                self.epsilon = self.final_epsilon
-            self.log("{i_frame} | epsilon: {epsilon}".format(i_frame=self.i_action, epsilon=self.epsilon))
+            self.epsilon = self.final_epsilon
+        #self.log("{i_frame} | epsilon: {epsilon}".format(i_frame=self.i_action, epsilon=self.epsilon))
 
         if random.random() < self.epsilon:
             action = random.randint(0, self.n_actions - 1)
@@ -167,8 +153,6 @@ class DQNAlgo:
         return action
 
     def feedback(self, exp):
-        if self.test_mode:
-            return
         # exp -> s0 a0 r0 s1 game_over
         self.i_action += 1
         self.state = self._prep_state(exp.s1)
@@ -193,7 +177,7 @@ class DQNAlgo:
         if len(self.replay_memory) > self.replay_start_size and self.i_action % 4 == 0:
             sample = zip(*self.replay_memory.sample(self.minibatch_size))
 
-            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_size, self.screen_size)
+            s0 = np.array(sample[0], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_width, self.screen_height)
 
             a0 = np.array(sample[1], dtype=np.int8).reshape(self.minibatch_size, self.n_actions)
 
@@ -201,7 +185,7 @@ class DQNAlgo:
 
             future_reward_indicators = np.array(sample[3], dtype=np.int8).reshape(self.minibatch_size, 1)
 
-            s1 = np.array(sample[4], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_size, self.screen_size)
+            s1 = np.array(sample[4], dtype=theano.config.floatX).reshape(self.minibatch_size, 4, self.screen_width, self.screen_height)
 
             t = self.train_fn(s0, a0, r0, s1, future_reward_indicators)
 
@@ -215,10 +199,12 @@ class DQNAlgo:
             if self.n_parameter_updates % self.target_network_update_frequency == 0:
                 self._update_network_stale()
 
-        if self.i_action % self.save_every_n_frames == 100:
-            filename = 'weights/weights_' + str(self.i_action) + '.npz'
-            print("{i_frame} | File saved: {filename}".format(i_frame=self.i_action, filename=filename))
-            np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
+    def get_state(self):
+        return lasagne.layers.get_all_param_values(self.network)
+
+    def set_state(self, param_values):
+        lasagne.layers.set_all_param_values(self.network, param_values)
+        lasagne.layers.set_all_param_values(self.network_stale, param_values)
 
     def __str__(self):
         return """

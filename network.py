@@ -4,7 +4,6 @@ from __future__ import division
 import lasagne
 
 
-
 def build_nature_with_pad(n_actions, input_var, screen_size):
     network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
                                         input_var=input_var)
