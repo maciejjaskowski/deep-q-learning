@@ -28,7 +28,7 @@ class SimpleBreakoutVisualizer:
 
         pygame.display.flip()
         import time
-        time.sleep(0.01)
+        time.sleep(0.05)
 
     def next_game(self):
         pass

@@ -101,12 +101,12 @@ class Teacher:
         if not self.game.finished:
             print "Failure."
 
-        # if feedback:
-        #     print "Game reward: " + str(self.game.cum_reward)
-        #     print ""
-        #
-        #     self.run_ave = self.run_ave * 0.999 + 0.001 * self.game.cum_reward
-        #     print "Running average: " + str(self.run_ave)
+        if feedback:
+            print "Game reward: " + str(self.game.cum_reward)
+            print ""
+
+            self.run_ave = self.run_ave * 0.999 + 0.001 * self.game.cum_reward
+            print "Running average: " + str(self.run_ave)
 
         self.game_visualizer.next_game()
         return self.game.cum_reward
