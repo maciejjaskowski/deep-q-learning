@@ -174,7 +174,8 @@ d = {
     'repeat_action': 4,
     'skip_n_frames_after_lol': 30,
     'target_network_update_frequency': 10000,
-    'final_exploration_frame': 1000000
+    'final_exploration_frame': 1000000,
+    'run_test_every_n': 1000000000000000,
      }
 
 if __name__ == "__main__":
