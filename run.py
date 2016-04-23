@@ -234,16 +234,10 @@ if __name__ == "__main__":
                 d["dqn.network"] = network.build_nature
             elif a == 'nature_with_pad':
                 d["dqn.network"] = network.build_nature_with_pad
-            elif a == 'nature_with_pad2':
-                d["dqn.network"] = network.build_nature_with_pad2
-            elif a == 'nature_with_pad3':
-                d["dqn.network"] = network.build_nature_with_pad3
             elif a == 'nips':
                 d["dqn.network"] = network.build_nips
-            elif a == 'nature_dnn':
-                d["dqn.network"] = network.build_nature_dnn
-            elif a == 'nips_dnn':
-                d["dqn.network"] = network.build_nips_dnn
+            elif a == 'nature_with_pad_he':
+                d["dqn.network"] = network.build_nature_with_pad_he
         elif o in ("--dqn.updates",):
             import updates
             if a == 'deepmind_rmsprop':
