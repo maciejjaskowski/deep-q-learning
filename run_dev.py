@@ -4,11 +4,11 @@ import network
 d = run.d
 d['game'] = 'space_invaders'
 d['reshape'] = 'mean'
-#d['dqn.no_replay'] = True
+#d['no_replay'] = True
 d['visualize'] = None #'q'
-d['dqn.replay_start_size'] = 100
+d['replay_start_size'] = 100
 d['show_mood'] = run.Log
-d['dqn.network'] = network.build_nature
+d['network'] = network.build_nature
 d['weights_dir'] = None
 #d['weights_dir'] = 'weights'
 run.main(**d)

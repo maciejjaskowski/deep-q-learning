@@ -5,12 +5,12 @@ d = run.d
 d['game'] = 'simple_breakout'
 d['replay'] = 'uniform'
 d['visualize'] = None#'q'
-d['dqn.replay_start_size'] = 50000
+d['replay_start_size'] = 50000
 d['show_mood'] = None
 #d['final_exploration_action'] = 100000
-d['dqn.network'] = network.build_simple_breakout
+d['network'] = network.build_simple_breakout_W_caffe_normal
 import updates
-d['dqn.updates'] = lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
+d['updates'] = lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
 d['weights_dir'] = 'weights'
 
 #d['weights_dir'] = 'weights-sb-1'
@@ -21,5 +21,5 @@ d['repeat_action'] = 1
 d['skip_n_frames_after_lol'] = 0
 d['target_network_update_frequency'] = 10000
 d['final_exploration_frame'] = 100000
-d['dqn.replay_memory_size'] = 400000
+d['replay_memory_size'] = 400000
 run.main(**d)
