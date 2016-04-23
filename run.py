@@ -9,6 +9,35 @@ import simple_breakout
 
 def main(**kargs):
 
+    if kargs['network'] == 'nature':
+        kargs["network"] = network.build_nature
+    elif kargs['network'] == 'nature_with_pad':
+        kargs["network"] = network.build_nature_with_pad
+    elif kargs['network'] == 'nips':
+        kargs["network"] = network.build_nips
+    elif kargs['network'] == 'nature_with_pad_he':
+        kargs["network"] = network.build_nature_with_pad_he
+    elif hasattr(kargs['network'], '__call__'):
+        pass
+    else:
+        raise RuntimeError("Unknown network: {network}".format(network=kargs['network']))
+
+    import updates
+    if kargs['updates'] == 'deepmind_rmsprop':
+        kargs["updates"] = \
+            lambda loss, params: updates.deepmind_rmsprop(loss, params,
+                                                          learning_rate=d['deepmind_rmsprop_learning_rate'],
+                                                          rho=d['deepmind_rmsprop_rho'],
+                                                          epsilon=d['deepmind_rmsprop_epsilon'])
+    elif kargs['updates'] == 'rmsprop':
+        kargs["updates"] = \
+            lambda loss, params: lasagne.updates.rmsprop(loss, params,
+                                                         learning_rate=d['rmsprop_learning_rate'],
+                                                         rho=d['rmsprop_rho'],
+                                                         epsilon=d['rmsprop_epsilon'])
+    else:
+        raise RuntimeError("Unknown updates: {updates}".format(updates=kargs['updates']))
+
     if kargs['theano_verbose']:
         theano.config.compute_test_value = 'warn'
         theano.config.exception_verbosity = 'high'
@@ -48,9 +77,9 @@ def main(**kargs):
 
     algo_train = create_algo()
     algo_test = create_algo()
-    algo_test.final_epsilon = 0.1
-    algo_test.initial_epsilon = 0.1
-    algo_test.epsilon = 0.1
+    algo_test.final_epsilon = kargs['test_epsilon']
+    algo_test.initial_epsilon = kargs['test_epsilon']
+    algo_test.epsilon = kargs['test_epsilon']
 
 
     import Queue
@@ -98,9 +127,9 @@ def main(**kargs):
                         skip_n_frames_after_lol=kargs['skip_n_frames_after_lol'],
                         tester=True)
 
-    q.teach_and_test(teacher, tester, n_epochs=20,
-                     frames_to_test_on=150000,
-                     epoch_size=50000,
+    q.teach_and_test(teacher, tester, n_epochs=kargs['n_training_epochs'],
+                     frames_to_test_on=kargs['n_test_epochs'] * kargs['epoch_size'],
+                     epoch_size=kargs['epoch_size'],
                      state_dir=kargs['weights_dir'],
                      algo_initial_state_file=kargs['algo_initial_state_file'])
 
@@ -162,7 +191,6 @@ class Plot(object):
 
 d = {
     'game': 'space_invaders',
-    'reshape': 'max',
     'visualize': False,
     'record_dir': None,
     'weights_dir': 'weights',
@@ -171,17 +199,29 @@ d = {
     'replay_start_size': 50000,
     'initial_epsilon': 1,
     'final_epsilon': 0.1,
+    'test_epsilon': 0.1,
     'log_frequency': 1,
     'replay_memory_size': 400000,
     'no_replay': False,
-    'network': network.build_nature,
-    'updates': lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01),
+    'network': 'nature_with_pad',
     'repeat_action': 4,
     'skip_n_frames_after_lol': 30,
     'target_network_update_frequency': 10000,
     'final_exploration_frame': 1000000,
     'algo_initial_state_file': None,
     'max_actions_per_game': 10000,
+    'updates': 'deepmind_rmsprop',
+
+    'deepmind_rmsprop_learning_rate': 0.00025,
+    'deepmind_rmsprop_rho': .95,
+    'deepmind_rmsprop_epsilon': 0.01,
+    'rmsprop_learning_rate': 0.0002,
+    'rmsprop_rho': .95,
+    'rmsprop_epsilon': 1e-6,
+
+    'n_training_epochs': 50,
+    'n_test_epochs': 1,
+    'epoch_size': 50000
      }
 
 if __name__ == "__main__":
@@ -189,12 +229,12 @@ if __name__ == "__main__":
     import getopt
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'game=',
-        'reshape=',
         'visualize=',
         'record_dir=',
         'replay_start_size=',
         'final_epsilon=',
         'initial_epsilon=',
+        'test_epsilon=',
         'log_frequency=',
         'replay_memory_size=',
         'theano_verbose=',
@@ -202,15 +242,22 @@ if __name__ == "__main__":
         'show_mood=',
         'no_replay',
         'network=',
-        'updates='])
+        'updates=',
+        'deepmind_rmsprop_epsilon=',
+        'deepmind_rmsprop_learning_rate=',
+        'deepmind_rmsprop_rho=',
+        'rmsprop_learning_rate=',
+        'rmsprop_rho=',
+        'rmsprop_epsilon=',
+        'n_training_epochs=',
+        'n_test_epochs=',
+        'epoch_size='])
 
     for o, a in optlist:
         if o in ("--visualize",):
             d['visualize'] = a
         elif o in ("--game",):
             d['game'] = a
-        elif o in ("--reshape",):
-            d['reshape'] = a
         elif o in ("--record_dir",):
             d['record_dir'] = a
         elif o in ("--weights_dir",):
@@ -222,6 +269,8 @@ if __name__ == "__main__":
         elif o in ("--initial_epsilon",):
             d["initial_epsilon"] = float(a)
             d["epsilon"] = float(a)
+        elif o in ("--test_epsilon",):
+            d['test_epsilon'] = float(a)
         elif o in ("--log_frequency",):
             d["log_frequency"] = int(a)
         elif o in ("--replay_memory_size",):
@@ -236,22 +285,27 @@ if __name__ == "__main__":
         elif o in ("--no_replay",):
             d["no_replay"] = True
         elif o in ("--network",):
-            if a == 'nature':
-                d["network"] = network.build_nature
-            elif a == 'nature_with_pad':
-                d["network"] = network.build_nature_with_pad
-            elif a == 'nips':
-                d["network"] = network.build_nips
-            elif a == 'nature_with_pad_he':
-                d["network"] = network.build_nature_with_pad_he
+            d['network'] = a
         elif o in ("--updates",):
-            import updates
-            if a == 'deepmind_rmsprop':
-                d["updates"] = \
-                    lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
-            elif a == 'rmsprop':
-                d["updates"] = \
-                    lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
+            d['updates'] = a
+        elif o in ('--deepmind_rmsprop_epsilon',):
+            d['deepmind_rmsprop_epsilon'] = float(a)
+        elif o in ('--deepmind_rmsprop_learning_rate',):
+            d['deepmind_rmsprop_learning_rate'] = float(a)
+        elif o in ('--deepmind_rmsprop_rho',):
+            d['deepmind_rmsprop_rho'] = float(a)
+        elif o in ('--rmsprop_learning_rate',):
+            d['rmsprop_learning_rate'] = float(a)
+        elif o in ('--rmsprop_rho',):
+            d['rmsprop_rho'] = float(a)
+        elif o in ('--rmsprop_epsilon',):
+            d['rmsprop_epsilon'] = float(a)
+        elif o in ('--n_training_epochs',):
+            d['n_training_epochs'] = int(a)
+        elif o in ("--n_test_epochs",):
+            d['n_test_epochs'] = int(a)
+        elif o in ("--epoch_size",):
+            d['epoch_size'] = int(a)
         else:
             assert False, "unhandled option"
 

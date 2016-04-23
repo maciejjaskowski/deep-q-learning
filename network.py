@@ -5,7 +5,7 @@ import lasagne
 
 
 def build_nature_with_pad(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -41,7 +41,7 @@ def build_nature_with_pad(n_actions, input_var, screen_size):
 
 
 def build_nature_with_pad_he(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -80,7 +80,7 @@ def build_nature_with_pad_he(n_actions, input_var, screen_size):
 
 
 def build_nature(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -116,7 +116,7 @@ def build_nature(n_actions, input_var, screen_size):
 
 
 def build_nips(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -141,7 +141,6 @@ def build_nips(n_actions, input_var, screen_size):
         b=lasagne.init.Constant(.1))
 
     return network
-
 
 
 def build_simple_breakout_W_caffe_normal(n_actions, input_var, screen_size):

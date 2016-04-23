@@ -10,7 +10,7 @@ d['show_mood'] = None
 #d['final_exploration_action'] = 100000
 d['network'] = network.build_simple_breakout_W_caffe_normal
 import updates
-d['updates'] = lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
+d['updates'] = 'deepmind_rmsprop'
 d['weights_dir'] = 'weights'
 
 #d['weights_dir'] = 'weights-sb-1'

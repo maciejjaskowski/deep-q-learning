@@ -22,7 +22,7 @@ def init(game, display_screen=False, record_dir=None):
 class Phi(object):
 
     def __init__(self):
-        self.screen_size = 84
+        self.screen_size = (84, 84)
 
     def __call__(self, frames):
         last = frames[3:16:4]
