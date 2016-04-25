@@ -40,7 +40,7 @@ def main(**kargs):
     else:
         ale = ag.init(game=kargs['game'], display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
         game = ag.ALEGame(ale)
-        phi = ag.Phi()
+        phi = ag.Phi(method=kargs["phi_method"])
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
     algo = dqn.DQNAlgo(game.n_actions(),
@@ -176,6 +176,7 @@ d = {
     'target_network_update_frequency': 10000,
     'final_exploration_frame': 1000000,
     'run_test_every_n': 1000000000000000,
+    'phi_method': 'resize',
      }
 
 if __name__ == "__main__":
