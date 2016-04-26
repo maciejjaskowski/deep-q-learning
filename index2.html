@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Deep Reinforcement Learning</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<center><img src="https://motivatinggiraffe.files.wordpress.com/2014/09/persevere.png?w=700"></center>
+					<aside class="notes">
+Nie mamy y, <br/>nie mamy funkcji celu, <br/>input -> akcja, <br/>nagroda z opóźnieniem.
+    				</aside>	
+				</section>				
+				<section >
+				   <section style="text-align: right">
+				   		<table>
+				   		<tr>
+				   		<td style="vertical-align: middle;"><h2>Deep Reinforcement Learning</h2>
+					<div><p>An introduction</p></div>	</td>
+				   		<td>
+				         <img src="assets/selfie.jpg">
+	                     <h2>Maciej Jaśkowski</h2>
+	                     <h5>Data Science Freelancer</h5>
+	                    </td> 
+	                    </tr>
+	                    </table>
+	                    <aside class="notes">
+                		  imię, Data Science
+                		</aside>
+	                </section>
+                	<section>
+                    <h3>Projects</h3>
+                    <table >
+
+                    <tr><td><img src="assets/rc-logo.png" style="margin: 30px"/></td><td style="vertical-align: middle; padding-right: 0px"> <b>Recurse Center </b></td>
+                    <td><img src="/assets/agent-inbox-logo.jpeg" style="margin: 30px"/></td><td style="vertical-align: middle; padding-right: 0px">Agent Inbox</td></tr>
+                    <tr><td><img src="/assets/auto-brain-logo.png" style="margin: 30px"/></td><td style="vertical-align: middle; padding-right: 0px">Auto Brain</td>                    
+                    <td><img src="/assets/so1-logo.jpeg" style="margin: 30px"/></td><td style="vertical-align: middle; padding-right: 0px">Segment of 1</td></tr>
+                    <tr>
+                    	<td><img src="/assets/mimuw-logo.png" style="marign: 30px"/></td>
+                    	<td style="vertical-align: middle; padding-right: 0px">M.S. Mathematics</td>
+                    	<td style="vertical-align: middle; padding-right: 0px">B.S. Computer Science</td>
+                    </tr>
+
+                	</table>
+                	<aside class="notes">
+                		W poprzednim życiu<br/>
+                		programowanie, backend, Scala, systemy rozproszone.<br/>
+                		Startupy
+                	</aside>	     
+
+                	</section>         
+                </section>
+                <section>
+                	<section>
+                		<h2> Table Tennis </h2>
+		                <iframe width="640" height="360" src="https://www.youtube.com/embed/SH3bADiB7uQ?t=1m12s" frameborder="0" allowfullscreen></iframe>
+		                <p class="source">
+		                <em>Wang et. al.</em><a href="http://pub.ist.ac.at/~chl/papers/wang-iros2011.pdf" > Learning Anticipation Policies for Robot Table Tennis</a> (1:12)</p> 
+	                </section>
+
+	                <section>
+	                <h2>Alpha Go 4:1 Fan Hui<h2>	                
+	                <img src="/assets/Go.jpg" height="70%" width="70%"/>
+	                <p class="source"><em>Silver, Huang et. al. </em><a href="https://gogameguru.com/i/2016/03/deepmind-mastering-go.pdf">Alpha Go</a></p>
+	                </section>
+	                <section>
+	                	<h2>Attention</h2>
+	                	<img src="/assets/Attention.png"/>
+						<p class="source"><em>Mnih</em> <a href="http://papers.nips.cc/paper/5542-recurrent-models-of-visual-attention.pdf">Recurrent Models of Visual Attention</a></p>
+	                </section>
+                </section>
+                <section>
+                	<section>
+	                	<h3> Space Invaders </h3>
+						<video width="600" height="450" controls loop >
+						  <source src="/assets/space_invaders.webm" type="video/webm">
+						  <source src="/assets/space_invaders.mp4" type="video/mp4">
+						  I'm sorry; your browser doesn't support HTML5 video in WebM with VP8 or MP4 with H.264.
+						</video>
+						<p class="source">
+						Mnih, Kavukcuoglu1, Silver
+						<a href="https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf">Human-level control through deep reinforcement learning</a>
+						</p>
+					</section>
+					<section>
+						<h3> Deep Q Network implementations</h3>
+						<ul>						
+						<li><a href="https://github.com/spragunr/deep_q_rl">Theano by spragunr</a></li>
+						<li><a href="https://github.com/tambetm/simple_dqn">Neon by tambetm</a></li>
+						<li><a href="https://github.com/kuz/DeepMind-Atari-Deep-Q-Learner">Lua (original)</a></li>
+						<li><a href="https://github.com/muupan/dqn-in-the-caffe">Caffe by muupan</a></li>
+						<li><a href="https://github.com/maciejjaskowski/deep-q-learning/">Theano by me</a></li>
+						</ul>
+					</section>
+				</section>
+                <section>
+                	<section>
+					<h2>Emulator</h2>
+					<table>
+						<tr>
+							<td style="vertical-align: middle; padding-right: 0px"><img width="100px" height="100px" src="/assets/space-invaders-screen-shot.png" style="display:inline-block"></td>
+							<td style="vertical-align: middle; padding-left: 0px"><span style="display:inline-block">,&nbsp;&nbsp; $\uparrow$</span></td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td>
+							
+							<td style="vertical-align: middle">$$E$$</td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td>
+							<td style="vertical-align: middle">$$10$$</td>	
+							<td style="vertical-align: middle">$$False$$</td>
+							<td><img width="100px" height="100px" src="/assets/space-invaders-screen-shot.png" style="display:inline-block"></td>
+						</tr>
+						<tr class="fragment">
+							<td style="vertical-align: middle">$$s_0$$</td>
+							<td style="vertical-align: middle">$$a_0$$</td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td>
+							
+							<td style="vertical-align: middle">$$E$$</td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td>
+							<td style="vertical-align: middle">$$r_0$$</td>
+							<td style="vertical-align: middle">$$l_0$$</td>
+							<td style="vertical-align: middle">$$s_1$$</td>
+						</tr>
+						
+						</table>						
+					</section>	
+						
+				</section>
+				<section>
+					<section>
+						<h3>Policy</h3>
+						<table>
+						<tr>
+							<td style="vertical-align: middle; padding-right: 0px"><img width="100px" height="100px" src="/assets/space-invaders-screen-shot.png" style="display:inline-block"></td>							
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow^{\pi}}$$</td>
+							<td style="vertical-align: middle; padding-left: 0px"><span style="display:inline-block">$\uparrow$</span></td>							
+						</tr>
+						<tr>
+							<td style="vertical-align: middle; padding-right: 0px">$$s_0$$</td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow^{\pi}}$$</td>
+							<td style="vertical-align: middle; padding-left: 0px"><span style="display:inline-block">$$a_0$$</span></td>							
+						</tr>
+					</table>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Q</h3>
+						<table>
+						<tr>
+							<td style="vertical-align: middle; padding-right: 0px"><img width="100px" height="100px" src="/assets/space-invaders-screen-shot.png" style="display:inline-block"></td>
+							<td style="vertical-align: middle; padding-left: 0px"><span style="display:inline-block">,&nbsp;&nbsp; $\uparrow$</span></td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow^{Q}}$$</td>
+							
+							<!-- <td><img width="100px" height="100px" src="/assets/real-neurons.gif"></td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td> -->
+							<td style="vertical-align: middle">$$10.5$$</td>
+						</tr>
+						<tr>
+							<td style="vertical-align: middle; padding-right: 0px"><img width="100px" height="100px" src="/assets/space-invaders-screen-shot.png" style="display:inline-block"></td>
+							<td style="vertical-align: middle; padding-left: 0px"><span style="display:inline-block">,&nbsp;&nbsp; $\leftarrow$</span></td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow^{Q}}$$</td>
+							
+							<!-- <td><img width="100px" height="100px" src="/assets/real-neurons.gif"></td>
+							<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td> -->
+							<td style="vertical-align: middle">$$9.7$$</td>
+						</tr>
+						<tr>
+						<td style="vertical-align: middle">$$s_0$$</td>
+						<td style="vertical-align: middle">$$a_0$$</td>
+						<td style="vertical-align: middle">$$\color{grey}{\longrightarrow^{Q}}$$</td>
+						
+						<!-- <td style="vertical-align: middle">$$Q$$</td>
+						<td style="vertical-align: middle">$$\color{grey}{\longrightarrow}$$</td> -->
+						<td style="vertical-align: middle">$$q$$</td>
+						</tr>
+						</table>						
+						<div class="fragment" style="margin-top:90px">							
+							$$\pi(a) := \text{argmax}_a Q(s_0, a)$$
+						</div>
+						<aside class="notes">
+							Życiowy przykład na surprise.
+						</aside>
+					</section>	
+					<section>
+						<h3>Expected Accumulated Future Discounted Reward</h3>
+						<span class="fragment highlight-current-white">$$Q(s,a) = r_0 + \gamma r_1 + \ldots + \gamma^{T}r_T$$
+						</span>
+						<span class="fragment highlight-current-white">$$Q(s,a) = r_0 + \gamma \left(r_1 + \ldots + \gamma^{T-1}r_T\right)$$
+						</span>
+						<span class="fragment highlight-current-white">$$Q(s_0,a_0) = r_0 + \gamma \max_{a} Q(s_1, a) $$</span>
+						<p class="source"><em>Sutton, Barto</em><a href="https://webdocs.cs.ualberta.ca/~sutton/book/ebook/">
+							Reinforcement Learning: an introduction
+						</a></p>
+					</section>
+					<section>
+						<h3>Surprise</h3>
+						<span class="fragment highlight-current-white">$$Q(s_0,a_0) = r_0 + \gamma \max_{a} Q(s_1, a) $$</span>
+						<span class="fragment highlight-current-white">$$\hat{Q} \sim\ Q$$</span>
+						<span class="fragment highlight-current-white">$$\hat{Q}(s_0,a_0) \sim\ r_0 + \gamma \max_{a} \hat{Q}(s_1, a) $$</span>
+						<span class="fragment highlight-current-white">
+						$$\text{Surprise} := \hat{Q}(s_0,a_0) - \left(r_0 + \gamma \max_{a} \hat{Q}(s_1, a)\right) $$
+						</span>
+						<p class="source"><em>Sutton, Barto</em><a href="https://webdocs.cs.ualberta.ca/~sutton/book/ebook/">
+							Reinforcement Learning: an introduction
+						</a></p>
+					</section>					
+				</section>
+
+                <section>
+                	<section>
+                	<h3>Network</h3>
+                       <pre>
+<code data-trim data-noescape>
+n = Conv2DLayer(n, num_filters=32, filter_size=(8, 8), stride=4, nonlinearity=rectify)
+n = Conv2DLayer(n, num_filters=64, filter_size=(4, 4), stride=2, nonlinearity=rectify)
+n = Conv2DLayer(n, num_filters=64, filter_size=(3, 3), stride=1, nonlinearity=rectify)
+n = DenseLayer(n, num_units=512, nonlinearity=rectify)
+n = DenseLayer(n, num_units=n_actions)</code></pre>
+					<table>
+					<tr><td style="vertical-align: middle; padding-right: 0px">$Q = $ </td><td><img src="/assets/real-neurons.gif"></td></tr>
+					</table>
+					<aside class="notes">
+						Obrazek wpada do sieci neuronowej,<br/>
+						Na wyjściu dostajemy oszacowania Q<br/>
+						Loss? = Surprise
+					</aside>
+					</section>
+					<section>
+						<h3>Loss = Surprise</h3>
+						<span>
+						$$\hat{Q}(s_0,a_0) - \left(r_0 + \gamma \max_{a} \hat{Q}(s_1, a)\right) $$
+						</span>
+					</section>
+                </section>
+                <section>
+                	<section>
+                 	<h2>Partial observability</h2>                 	
+                 	<div style="position: relative; left: 0; top: 0;">
+					  <img width="80%" height="80%" src="/assets/partial-observability-issue.png" style="position: relative; top: 0; left: 0;"/>
+					  <img class="fragment current-visible" width="80%" height="80%" src="/assets/partial-observability.gif" style="position: absolute; top: 30px; left: 70px;"/>
+					</div>
+                 	</section>
+                 	<section>
+                 		<h3> Channels</h3>
+                 		<p>
+                 		<img width="30%" height="30%" src="/assets/red-channel.png">
+                 		<img width="30%" height="30%" src="/assets/green-channel.png">
+                 		<img width="30%" height="30%" src="/assets/blue-channel.png">
+                 		</p>
+                 		<p>
+                 		<img width="30%" height="30%" src="/assets/partial-observability1.png">
+                 		<img width="30%" height="30%" src="/assets/partial-observability2.png">
+                 		<img width="30%" height="30%" src="/assets/partial-observability3.png">                 		
+                 		</p>
+                 		<canvas>
+                 		</canvas>
+                 	</section>
+                </section>
+                <section>
+                	<section>
+                 		<h2>DQN details</h2>
+                 		<ul>
+                 		<li> Stability -> minibatch, RMSProp, target network</li>
+                 		<li> Correlation -> Memory</li>   
+                 		<li> Exploration -> $\epsilon$-greedy</li>              		
+                 		</ul>	
+                 	</section>
+                 	<section>
+                 	<h3> Stochastic Gradient Descent </h3>
+                 	<img src="/assets/sgd.gif" width="50%" height="50%">
+                 	<p class="source">
+
+                 	<em>Karpathy</em> <a href="http://cs231n.github.io/neural-networks-3/#ada">Cs231n lecture, Stanford</a>
+                 	</p>
+                 	</section>	
+                </section>
+                <section>
+                	<section>
+                		<h2>Technical details</h2>
+                		<ul>
+                			<li>Theano + Lasagne</li>
+                			<li>AWS g2-2xlarge</li>
+                			<li>persistent spot instances ~ 0.2$ per hour</li>
+                			<li>Space Invaders ~ 36 hours of training or 8M actions</li>
+                			<li>40 runs</li>
+                		</ul>
+                	</section>
+                </section>
+                <section>
+                	<section>
+	                	<h2>Thank you!</h2>
+	                	<img src="/assets/questions.jpg">
+                	</section>
+                	<section>
+                		<img src="/assets/hodor.jpg">
+                	</section>
+                </section>
+                <section>
+                	<h2>Resources</h2>
+                	<ul>
+                	<li><a href="https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf">Human level control through DRL</a></li>          	
+                	<li><a href="http://arxiv.org/abs/1511.05952">Prioritized Experience Replay</a></li>
+                	<li><a href="http://arxiv.org/pdf/1602.01783v1.pdf"> Asynchronous methods for DRL</a></li>
+                	<li><a href="www.dtic.mil/dtic/tr/fulltext/u2/a261434.pdf">Reinforcement Learning for Robots Using Neural Networks</a></li>
+                	<li><a href="http://arxiv.org/pdf/1507.06527.pdf">Deep Recurrent Q-Learning For Partially Observable MDPs</a></li>
+                	<li><a href="https://webdocs.cs.ualberta.ca/~sutton/book/ebook/">Reinforcement Learning: An introduction</a></li>
+                	<li><a href="https://gogameguru.com/i/2016/03/deepmind-mastering-go.pdf">Alpha Go</a></li>    
+                	<li><a href="http://papers.nips.cc/paper/5542-recurrent-models-of-visual-attention.pdf">Recurrent Models of Visual Attention</a></li>   
+                	<li><a href="https://gym.openai.com/">Open AI gym</a></li>
+                	<li><a href="http://lasagne.readthedocs.org">Lasagne</a></li>
+                	<li><a href="http://deeplearning.net/software/theano/">Theano</a></li>
+                	</ul>
+                </section>
+			</div>
+			<div style="position:absolute;bottom:0;left:0" class="stopka"><h6><a href="mailto:maciej.jaskowski@gmail.com">Maciej Jaśkowski</a></h6>Deep Reinforcement Learning <a href="http://maciejjaskowski.github.io/deep-q-learning/">http://maciejjaskowski.github.io/deep-q-learning/</a></div>
+		</div>
+
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+				center: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/math/math.js', async: true } ,
+                    { src: 'socket.io/socket.io.js', async: true },
+                    { src: 'plugin/notes-server/client.js', async: true },
+				],
+			    math: {
+				mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+				config: 'TeX-AMS_HTML-full'  // See http://docs.mathjax.org/en/latest/config-files.html
+			    } 
+			});
+		</script>
+	</body>
+</html>
