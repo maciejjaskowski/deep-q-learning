@@ -28,6 +28,8 @@ the environment.
 [Human-level control through deep reinforcement
 learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf)
 
+[Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/pdf/1509.06461.pdf) - more stable learning through double q-learning
+
 [Arcade Learning Environment](http://www.arcadelearningenvironment.org)
 
 
