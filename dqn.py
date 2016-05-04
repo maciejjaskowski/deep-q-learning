@@ -42,7 +42,8 @@ class ReplayMemory(object):
 
 
 class DQNAlgo:
-    def __init__(self, n_actions, replay_memory, build_network, updates, screen_size, initial_weights_file=None):
+    def __init__(self, n_actions, replay_memory, build_network, updates, screen_size, weights_dir, initial_weights_file=None):
+        self.weights_dir = weights_dir
         self.screen_size = screen_size
         self.mood_q = None
         self.last_q = 0
@@ -216,7 +217,7 @@ class DQNAlgo:
                 self._update_network_stale()
 
         if self.i_action % self.save_every_n_frames == 100:
-            filename = 'weights/weights_' + str(self.i_action) + '.npz'
+            filename = '{weights_dir}/weights_{i_action}.npz'.format(i_action=self.i_action, weights_dir=self.weights_dir)
             print("{i_frame} | File saved: {filename}".format(i_frame=self.i_action, filename=filename))
             np.savez(filename, *lasagne.layers.get_all_param_values(self.network))
 

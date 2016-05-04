@@ -5,6 +5,7 @@ import theano
 import lasagne
 import network
 import simple_breakout
+import updates as u
 
 def latest(dir='.'):
     if dir == None:
@@ -19,6 +20,9 @@ def latest(dir='.'):
 
 
 def main(**kargs):
+
+    print(kargs)
+
     initial_weights_file, i_total_action = latest(kargs['weights_dir'])
 
     print("Continuing using weights from file: ", initial_weights_file, "from", i_total_action)
@@ -40,14 +44,42 @@ def main(**kargs):
     else:
         ale = ag.init(game=kargs['game'], display_screen=(kargs['visualize'] == 'ale'), record_dir=kargs['record_dir'])
         game = ag.ALEGame(ale)
-        phi = ag.Phi(method=kargs["phi_method"])
+        if kargs['phi'] == '4':
+            phi = ag.Phi4(method=kargs['phi_method'])
+        elif kargs['phi'] == '1':
+            phi = ag.Phi(method=kargs["phi_method"])
+        else:
+            raise RuntimeError("Unknown phi: {phi}".format(phi=kargs['phi']))
 
     replay_memory = dqn.ReplayMemory(size=kargs['dqn.replay_memory_size']) if not kargs['dqn.no_replay'] else None
+
+    if kargs['network'] == 'nature':
+        build_network = network.build_nature
+    elif kargs['network'] == 'nature_with_pad':
+        build_network = network.build_nature_with_pad
+    elif kargs['network'] == 'nips':
+        build_network = network.build_nips
+    elif kargs['network'] == 'nature_with_pad_he':
+        build_network = network.build_nature_with_pad_he
+    else:
+        raise RuntimeError("Unknown network: {network}".format(network=kargs['network']))
+
+
+    if kargs['updates'] == 'deepmind_rmsprop':
+        updates = \
+            lambda loss, params: u.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
+    elif kargs['updates'] == 'rmsprop':
+        updates = \
+            lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
+    else:
+        raise RuntimeError("Unknown updates: {updates}".format(updates=kargs['updates']))
+
     algo = dqn.DQNAlgo(game.n_actions(),
                            replay_memory=replay_memory,
+                           weights_dir=kargs['weights_dir'],
                            initial_weights_file=initial_weights_file,
-                           build_network=kargs['dqn.network'],
-                           updates=kargs['dqn.updates'],
+                           build_network=build_network,
+                           updates=updates,
                            screen_size=phi.screen_size)
 
     algo.replay_start_size = kargs['dqn.replay_start_size']
@@ -59,12 +91,13 @@ def main(**kargs):
     algo.target_network_update_frequency = kargs['target_network_update_frequency']
     algo.final_exploration_frame = kargs['final_exploration_frame']
 
-
-    import Queue
-    algo.mood_q = Queue.Queue() if kargs['show_mood'] else None
-
     if kargs['show_mood'] is not None:
-        plot = kargs['show_mood']()
+        import Queue
+        algo.mood_q = Queue.Queue()
+        if kargs['show_mood'] == 'plot':
+            plot = Plot()
+        elif kargs['show_mood'] == "log":
+            plot = Log()
 
         def worker():
             while True:
@@ -157,7 +190,6 @@ class Plot(object):
 
 d = {
     'game': 'space_invaders',
-    'reshape': 'max',
     'visualize': False,
     'record_dir': None,
     'weights_dir': 'weights',
@@ -169,13 +201,14 @@ d = {
     'dqn.log_frequency': 1,
     'dqn.replay_memory_size': 400000,
     'dqn.no_replay': False,
-    'dqn.network': network.build_nature,
-    'dqn.updates': lasagne.updates.rmsprop,
+    'network': 'nature',
+    'updates': 'rmsprop',
     'repeat_action': 4,
     'skip_n_frames_after_lol': 30,
     'target_network_update_frequency': 10000,
     'final_exploration_frame': 1000000,
     'run_test_every_n': 1000000000000000,
+    'phi': '1',
     'phi_method': 'resize',
      }
 
@@ -184,7 +217,6 @@ if __name__ == "__main__":
     import getopt
     optlist, args = getopt.getopt(sys.argv[1:], '', [
         'game=',
-        'reshape=',
         'visualize=',
         'record_dir=',
         'dqn.replay_start_size=',
@@ -196,16 +228,16 @@ if __name__ == "__main__":
         'weights_dir=',
         'show_mood=',
         'dqn.no_replay',
-        'dqn.network=',
-        'dqn.updates='])
+        'network=',
+        'updates=',
+        'phi=',
+        'phi_method='])
 
     for o, a in optlist:
         if o in ("--visualize",):
             d['visualize'] = a
         elif o in ("--game",):
             d['game'] = a
-        elif o in ("--reshape",):
-            d['reshape'] = a
         elif o in ("--record_dir",):
             d['record_dir'] = a
         elif o in ("--weights_dir",):
@@ -224,29 +256,17 @@ if __name__ == "__main__":
         elif o in ("--theano_verbose",):
             d["theano_verbose"] = bool(a)
         elif o in ("--show_mood",):
-            if a == 'plot':
-                d["show_mood"] = Plot
-            elif a == "log":
-                d["show_mood"] = Log
+            d['show_mood'] = a
         elif o in ("--dqn.no_replay",):
             d["dqn.no_replay"] = True
-        elif o in ("--dqn.network",):
-            if a == 'nature':
-                d["dqn.network"] = network.build_nature
-            elif a == 'nature_with_pad':
-                d["dqn.network"] = network.build_nature_with_pad
-            elif a == 'nips':
-                d["dqn.network"] = network.build_nips
-            elif a == 'nature_with_pad_he':
-                d["dqn.network"] = network.build_nature_with_pad_he
-        elif o in ("--dqn.updates",):
-            import updates
-            if a == 'deepmind_rmsprop':
-                d["dqn.updates"] = \
-                    lambda loss, params: updates.deepmind_rmsprop(loss, params, learning_rate=.00025, rho=.95, epsilon=.01)
-            elif a == 'rmsprop':
-                d["dqn.updates"] = \
-                    lambda loss, params: lasagne.updates.rmsprop(loss, params, learning_rate=.0002, rho=.95, epsilon=1e-6)
+        elif o in ("--network",):
+            d['network'] = a
+        elif o in ("--updates",):
+            d['updates'] = a
+        elif o in ("--phi_method",):
+            d['phi_method'] = a
+        elif o in ("--phi",):
+            d['phi'] = a
         else:
             assert False, "unhandled option"
 
