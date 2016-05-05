@@ -4,9 +4,8 @@ from __future__ import division
 import lasagne
 
 
-
 def build_nature_with_pad(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -42,7 +41,7 @@ def build_nature_with_pad(n_actions, input_var, screen_size):
 
 
 def build_nature_with_pad_he(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -81,7 +80,7 @@ def build_nature_with_pad_he(n_actions, input_var, screen_size):
 
 
 def build_nature(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -117,7 +116,7 @@ def build_nature(n_actions, input_var, screen_size):
 
 
 def build_nips(n_actions, input_var, screen_size):
-    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size, screen_size),
+    network = lasagne.layers.InputLayer(shape=(32, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
@@ -144,28 +143,26 @@ def build_nips(n_actions, input_var, screen_size):
     return network
 
 
-
 def build_simple_breakout_W_caffe_normal(n_actions, input_var, screen_size):
-    import init
-    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size, screen_size),
+
+    network = lasagne.layers.InputLayer(shape=(None, 4, screen_size[0], screen_size[1]),
                                         input_var=input_var)
 
     network = lasagne.layers.Conv2DLayer(
         network, num_filters=4, filter_size=(3, 3), stride=1, pad=1,
         nonlinearity=lasagne.nonlinearities.rectify,
-        W=init.CaffeGlorot(lasagne.init.Normal, use_out=False))
-
+        W=lasagne.init.HeNormal(gain='relu'))
 
     network = lasagne.layers.DenseLayer(
         network,
         num_units=128,
-        nonlinearity=lasagne.nonlinearities.rectify)
+        nonlinearity=lasagne.nonlinearities.rectify,
+        W=lasagne.init.HeNormal(gain='relu'))
 
     network = lasagne.layers.DenseLayer(
         network,
         num_units=n_actions,
         nonlinearity=None,
-        W=lasagne.init.HeUniform(),
         b=lasagne.init.Constant(.1))
 
     return network

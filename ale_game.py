@@ -22,7 +22,7 @@ def init(game, display_screen=False, record_dir=None):
 class Phi(object):
 
     def __init__(self, method="crop_and_resize"):
-        self.screen_size = 84
+        self.screen_size = (84, 84)
         self.method = method
 
     def __call__(self, frames):
@@ -50,7 +50,7 @@ class Phi(object):
 class Phi4(object):
 
     def __init__(self, method):
-        self.screen_size = 84
+        self.screen_size = (84, 84)
         self.method = method
 
     def __call__(self, frames):
@@ -73,8 +73,6 @@ class Phi4(object):
             # Central crop to 224x224
             h, w = im.shape
             return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
-
-
 
 
 class ALEGameVisualizer:
@@ -110,7 +108,7 @@ class ALEGame(object):
 
     def __init__(self, ale):
         self.ale = ale
-        self.finished = False
+        self.finished = True
         self.cum_reward = 0
         self.action_set = self.ale.getMinimalActionSet()
 

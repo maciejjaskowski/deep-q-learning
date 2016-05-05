@@ -38,7 +38,8 @@ class SimpleBreakout(object):
 
     def __init__(self):
         self.action_set = [4, 7, 10]
-        self.reset_game()
+
+        self.finished = True
         self.bar = [random.randint(0, 11), 10]
         self.h = 12
         self.w = 12
