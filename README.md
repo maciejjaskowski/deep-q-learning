@@ -30,6 +30,8 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/pdf/1509.06461.pdf) - more stable learning through double q-learning
 
+[Dueling Network Architectures for Deep Q-learning](http://arxiv.org/pdf/1511.06581.pdf)
+
 [Arcade Learning Environment](http://www.arcadelearningenvironment.org)
 
 
