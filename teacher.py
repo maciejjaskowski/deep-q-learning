@@ -85,11 +85,11 @@ class Teacher:
         # if not self.game.finished:
         #     print "Failure."
 
-        # print "Game reward: " + str(self.game.cum_reward)
-        # print ""
-        #
-        # self.run_ave = self.run_ave * 0.999 + 0.001 * self.game.cum_reward
-        # print "Running average: " + str(self.run_ave)
+        print "Game reward: " + str(self.game.cum_reward)
+        print ""
+
+        self.run_ave = self.run_ave * 0.99 + 0.01 * self.game.cum_reward
+        print "Running average: " + str(self.run_ave)
 
         return self.game.cum_reward, i_total_action
 
