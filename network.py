@@ -35,6 +35,7 @@ def build_nature_with_pad(n_actions, input_var, screen_size):
     network = lasagne.layers.DenseLayer(
         network,
         num_units=n_actions,
+        nonlinearity=None,
         b=lasagne.init.Constant(.1))
 
     return network
@@ -74,6 +75,7 @@ def build_nature_with_pad_he(n_actions, input_var, screen_size):
     network = lasagne.layers.DenseLayer(
         network,
         num_units=n_actions,
+        nonlinearity=None,
         b=lasagne.init.Constant(.1))
 
     return network
@@ -110,6 +112,7 @@ def build_nature(n_actions, input_var, screen_size):
     network = lasagne.layers.DenseLayer(
         network,
         num_units=n_actions,
+        nonlinearity=None,
         b=lasagne.init.Constant(.1))
 
     return network
