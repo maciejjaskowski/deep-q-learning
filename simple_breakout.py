@@ -43,6 +43,7 @@ class SimpleBreakout(object):
         self.bar = [random.randint(0, 11), 10]
         self.h = 12
         self.w = 12
+        self.n_channels = 1
 
         self.prev_frames = [np.zeros((self.h, self.w), dtype=np.uint8),
                             np.zeros((self.h, self.w), dtype=np.uint8),

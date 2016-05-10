@@ -1,5 +1,5 @@
 import teacher as q
-import ale_game as ag
+
 import dqn
 import theano
 import lasagne
@@ -7,17 +7,22 @@ import network
 import simple_breakout
 import updates as u
 import pprint
+from phi import Phi4
 
 
-def main(game_name, network_type, updates_method,
+def main(game_name, network_type, updates_method, game_props, n_stack_frames, gamma,
+         doom_config_file,
+         doom_screen_resolution, doom_screen_format,
+         game_variables, input_n_last_actions,
          target_network_update_frequency,
          initial_epsilon, final_epsilon, test_epsilon, final_exploration_frame, replay_start_size,
          deepmind_rmsprop_epsilon, deepmind_rmsprop_learning_rate, deepmind_rmsprop_rho,
          rmsprop_epsilon, rmsprop_learning_rate, rmsprop_rho,
          phi_type, phi_method,
+         clip_rewards,
          epoch_size, n_training_epochs, n_test_epochs,
          visualize, record_dir, show_mood,
-         replay_memory_size, no_replay,
+         replay_memory_size, replay_memory_grace, no_replay,
          repeat_action, skip_n_frames_after_lol, max_actions_per_game,
          weights_dir, algo_initial_state_file,
          log_frequency, theano_verbose):
@@ -28,6 +33,7 @@ def main(game_name, network_type, updates_method,
         theano.config.exception_verbosity = 'high'
         theano.config.optimizer = 'fast_compile'
 
+
     if game_name == 'simple_breakout':
         game = simple_breakout.SimpleBreakout()
         class P(object):
@@ -37,15 +43,36 @@ def main(game_name, network_type, updates_method,
             def __call__(self, frames):
                 return frames
         phi = P()
-    else:
-        ale = ag.init(game=game_name, display_screen=(visualize == 'ale'), record_dir=record_dir)
-        game = ag.ALEGame(ale)
+        n_channels = 1
+    elif game_name == 'doom':
+        print(game_props)
+        import doom_game as dg
+        from vizdoom import ScreenFormat
+        from vizdoom import ScreenResolution
+
+        doom = dg.init_from_file(doom_config_file)
+
+        if doom_screen_resolution == 'RES_160X120':
+            doom.set_screen_resolution(ScreenResolution.RES_160X120)
+        else:
+            raise RuntimeError("Unknown screen_resultion {sr}".format(sr=doom_screen_resolution))
+        if doom_screen_format == 'GRAY8':
+            sf = ScreenFormat.GRAY8
+        elif doom_screen_format == 'RGB24':
+            sf = ScreenFormat.RGB24
+        else:
+            raise RuntimeError("Unknown screen_format {sf}".format(sf=doom_screen_format))
+
+        doom.set_screen_format(sf)
+        doom.init()
+
         if phi_type == '4':
-            phi = ag.Phi4(method=phi_method)
-        elif phi_type == '1':
-            phi = ag.Phi(method=phi_method)
+            phi = Phi4(method=phi_method)
         else:
             raise RuntimeError("Unknown phi: {phi}".format(phi=phi_type))
+        game = dg.MDoomGame(doom=doom, phi=phi, n_stack_frames=n_stack_frames, game_variables=[gv[0] for gv in game_variables])
+    else:
+        raise RuntimeError("Unknown game {game_name}".format(game_name))
 
     if network_type == 'nature':
         build_network = network.build_nature
@@ -76,29 +103,52 @@ def main(game_name, network_type, updates_method,
     else:
         raise RuntimeError("Unknown updates: {updates}".format(updates=updates_method))
 
-    replay_memory = dqn.ReplayMemory(size=replay_memory_size) if not no_replay else None
+    # replay_memory = dqn.ReplayMemory(size=replay_memory_size, tuple_len=4 + (n_game_vars > 0) * 2) if not no_replay else None
 
-    def create_algo():
-        algo = dqn.DQNAlgo(game.n_actions(),
-                               replay_memory=replay_memory,
-                               build_network=build_network,
-                               updates=updates,
-                               screen_size=phi.screen_size)
+    def create_algo(tester):
+        dqn_impl = dqn.DQN(gamma=gamma,
+                           n_channels=n_stack_frames * game.n_channels,
+                           screen_size=phi.screen_size,
+                           n_actions=game.n_actions(),
+                           n_additional_params=sum([gv[1] for gv in game_variables]) + input_n_last_actions * len(game.action_set),
+                           build_network=build_network,
+                           updates=updates)
+
+        if tester:
+            rms = 300
+            rmg = 300
+        else:
+            rms = replay_memory_size
+            rmg = replay_memory_grace
+
+        algo = dqn.Agent(gamma=gamma,
+                         n_actions=game.n_actions(),
+                         n_channels=n_stack_frames * game.n_channels,
+                         screen_size=phi.screen_size,
+                         max_memory_size=rms,
+                         memory_grace=rmg,
+                         no_learning=tester,
+                         dqn=dqn_impl,
+                         input_n_last_actions=input_n_last_actions,
+                         game_variables=[gv[1] for gv in game_variables])
 
         algo.replay_start_size = replay_start_size
         algo.final_epsilon = final_epsilon
         algo.initial_epsilon = initial_epsilon
+
+        algo.clip_rewards = clip_rewards
 
         algo.log_frequency = log_frequency
         algo.target_network_update_frequency = target_network_update_frequency
         algo.final_exploration_frame = final_exploration_frame
         return algo
 
-    algo_train = create_algo()
-    algo_test = create_algo()
+    algo_train = create_algo(tester=False)
+    algo_test = create_algo(tester=True)
     algo_test.final_epsilon = test_epsilon
     algo_test.initial_epsilon = test_epsilon
     algo_test.epsilon = test_epsilon
+
 
 
     import Queue
@@ -136,7 +186,6 @@ def main(game_name, network_type, updates_method,
     teacher = q.Teacher(game=game,
                         algo=algo_train,
                         game_visualizer=visualizer,
-                        phi=phi,
                         repeat_action=repeat_action,
                         max_actions_per_game=max_actions_per_game,
                         skip_n_frames_after_lol=skip_n_frames_after_lol,
@@ -145,11 +194,15 @@ def main(game_name, network_type, updates_method,
     tester = q.Teacher(game=game,
                         algo=algo_test,
                         game_visualizer=visualizer,
-                        phi=phi,
                         repeat_action=repeat_action,
                         max_actions_per_game=max_actions_per_game,
                         skip_n_frames_after_lol=skip_n_frames_after_lol,
                         tester=True)
+
+    import os
+    if not os.path.exists(weights_dir):
+        os.mkdir(weights_dir)
+    print("Creating not existing dir: {wd}".format(wd=weights_dir))
 
     q.teach_and_test(teacher, tester, n_epochs=n_training_epochs,
                      frames_to_test_on=n_test_epochs * epoch_size,
@@ -247,7 +300,13 @@ defaults = {
 
     'n_training_epochs': 50,
     'n_test_epochs': 1,
-    'epoch_size': 50000
+    'epoch_size': 50000,
+
+    'gamma': 0.99,
+    'n_stack_frames': 4,
+
+    'doom_screen_format': 'GRAY8',
+    'doom_screen_resolution': 'RES_160X120',
      }
 
 

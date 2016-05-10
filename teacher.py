@@ -4,9 +4,8 @@ from collections import namedtuple
 import random
 import numpy as np
 
-
 Point = namedtuple('Point', 'x y')
-Experience = namedtuple('Experience', 's0 a0 r0 s1 game_over')
+Experience = namedtuple('Experience', 's0 a0 r0 s1 lol')
 
 
 class GameNoVisualizer:
@@ -48,7 +47,7 @@ class ConstAlgo:
 
 
 class Teacher:
-    def __init__(self, game, algo, game_visualizer, phi, repeat_action,
+    def __init__(self, game, algo, game_visualizer, repeat_action,
                  max_actions_per_game,
                  skip_n_frames_after_lol,
                  tester):
@@ -56,7 +55,6 @@ class Teacher:
         self.algo = algo
         self.game_visualizer = game_visualizer
         self.repeat_action = repeat_action
-        self.phi = phi
         self.skip_n_frames_after_lol = skip_n_frames_after_lol
         self.max_actions_per_game = max_actions_per_game
         self.run_ave = 0
@@ -73,7 +71,6 @@ class Teacher:
 
         if self.game.finished:
             self.game.reset_game()
-            self.algo.init_state(self.phi(self.game.get_state()))
 
         i_action = 0
         while not self.game.finished and i_action < self.max_actions_per_game and i_total_action < total_n_actions:
@@ -82,31 +79,18 @@ class Teacher:
 
             self.single_action()
 
-        # if not self.game.finished:
-        #     print "Failure."
 
-        print "Game reward: " + str(self.game.cum_reward)
-        print ""
-
-        self.run_ave = self.run_ave * 0.99 + 0.01 * self.game.cum_reward
-        print "Running average: " + str(self.run_ave)
+        print("Game reward | " + str(self.game.cum_reward), i_total_action)
 
         return self.game.cum_reward, i_total_action
 
     def single_action(self):
-        old_state = self.phi(self.game.get_state())
-        action = self.algo.action(old_state)
+        action = self.algo.action()
 
-        import numpy as np
+        rep_reward, lol = self.game.input(action, self.repeat_action)
+        new_state = self.game.get_state()
 
-        rewards, lols = zip(*[self.game.input(action) for _ in range(self.repeat_action)])
-        rep_reward = np.sum(rewards)
-        lol = np.any(lols)
-        new_state = self.phi(self.game.get_state())
-
-        if not self.tester:
-            exp = Experience(old_state, action, rep_reward, new_state, lol)
-            self.algo.feedback(exp)
+        self.algo.feedback(action, rep_reward, lol, new_state)
 
         self.game_visualizer.show(new_state)
 
@@ -147,6 +131,7 @@ def teach_and_test(teacher, tester, n_epochs, frames_to_test_on, epoch_size, sta
         print("Epsilon | {epsilon}".format(epsilon=teacher.algo.epsilon))
         rewards = teacher.teach(i_epoch*epoch_size, (i_epoch+1) * epoch_size)
         end = time.time()
+        teacher.game.stop_game()
         print("Epoch {i_epoch} mean training result {result} on {n} games and {epoch_size} actions in {t} seconds.".format(
             i_epoch=i_epoch, result=np.mean(rewards), n=len(rewards), t=end-start, epoch_size=epoch_size))
 
@@ -159,6 +144,7 @@ def teach_and_test(teacher, tester, n_epochs, frames_to_test_on, epoch_size, sta
         start = time.time()
         rewards = tester.teach(0, frames_to_test_on)
         end = time.time()
+        tester.game.stop_game()
         print(tester.algo.epsilon)
         print("Epoch {i_epoch} mean validation result: {result} on {n} games in {t} seconds.".format(
             i_epoch=i_epoch, result=np.mean(rewards), n=len(rewards), t=end-start))

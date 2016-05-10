@@ -1,7 +1,6 @@
 from __future__ import division
 from ale_python_interface import ALEInterface
 import numpy as np
-import skimage.transform
 
 
 def init(game, display_screen=False, record_dir=None):
@@ -19,60 +18,6 @@ def init(game, display_screen=False, record_dir=None):
     return ale
 
 
-class Phi(object):
-
-    def __init__(self, method="crop_and_resize"):
-        self.screen_size = (84, 84)
-        self.method = method
-
-    def __call__(self, frames):
-        last = frames[3:16:4]
-        sec_last = frames[2:16:4]
-        return [self.resize_and_crop(img) for img in np.max([last, sec_last], axis=0)]
-
-    def resize_and_crop(self, im):
-        # Resize so smallest dim = 256, preserving aspect ratio
-        if self.method == "resize":
-            return skimage.transform.resize(im, (84, 84), preserve_range=True).astype(dtype=np.uint8)
-        else:
-            im = im[40:-10, :]
-            h, w = im.shape
-            if h < w:
-                im = skimage.transform.resize(im, (84, w*84//h), preserve_range=True)
-            else:
-                im = skimage.transform.resize(im, (h*84//w, 84), preserve_range=True)
-
-            # Central crop to 224x224
-            h, w = im.shape
-            return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
-
-
-class Phi4(object):
-
-    def __init__(self, method):
-        self.screen_size = (84, 84)
-        self.method = method
-
-    def __call__(self, frames):
-        last = frames[12:]
-        sec_last = frames[11:-1]
-        return [self.resize_and_crop(img) for img in np.max([last, sec_last], axis=0)]
-
-    def resize_and_crop(self, im):
-        # Resize so smallest dim = 256, preserving aspect ratio
-        if self.method == "resize":
-            return skimage.transform.resize(im, (84, 84), preserve_range=True).astype(dtype=np.uint8)
-        else:
-            im = im[40:-10, :]
-            h, w = im.shape
-            if h < w:
-                im = skimage.transform.resize(im, (84, w*84//h), preserve_range=True)
-            else:
-                im = skimage.transform.resize(im, (h*84//w, 84), preserve_range=True)
-
-            # Central crop to 224x224
-            h, w = im.shape
-            return im[h//2-42:h//2+42, w//2-42:w//2+42].astype(dtype=np.uint8)
 
 
 class ALEGameVisualizer:
@@ -111,6 +56,7 @@ class ALEGame(object):
         self.finished = True
         self.cum_reward = 0
         self.action_set = self.ale.getMinimalActionSet()
+        self.n_channels = 1
 
         self.h = 210
         self.w = 160
