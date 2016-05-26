@@ -36,6 +36,8 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 
 [Arcade Learning Environment](http://www.arcadelearningenvironment.org)
 
+[Hierarchicel Deep Q-Learning](http://arxiv.org/pdf/1604.06057v1.pdf)
+
 
 [Reccurent Model of Visual Attention](http://papers.nips.cc/paper/5542-recurrent-models-of-visual-attention.pdf) - applying q-learning to figure out what part of the image to look at.
 
