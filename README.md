@@ -73,3 +73,5 @@ learning](https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNat
 [Prioritized Experience Replay](http://arxiv.org/pdf/1511.05952v3.pdf) - on Atari games
 
 [Network in Network](http://arxiv.org/pdf/1312.4400v3.pdf) - MaxPooling looses information, let's keep some more information.
+
+[Concurrent Reinforcement Learning](http://www0.cs.ucl.ac.uk/staff/d.silver/web/Publications_files/concurrent-rl.pdf) - RL in time dependent environments
